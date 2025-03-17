@@ -8,7 +8,7 @@ use env_logger::{Builder as LoggerBuilder, Target};
 use tokio::runtime::Builder;
 // use triple_accel::levenshtein::levenshtein_simd_k;
 
-use simpleflow_ai::web::server::start_app;
+use easyflow::web::server::start_app;
 
 // Avoid musl's default allocator due to lackluster performance
 // https://nickb.dev/blog/default-musl-allocator-considered-harmful-to-performance
