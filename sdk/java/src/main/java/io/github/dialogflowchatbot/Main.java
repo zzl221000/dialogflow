@@ -14,7 +14,7 @@ public class Main {
             System.out.println("Main flow id:");
             String mainFlowId = scanner.nextLine();
             RequestData request = RequestData.create(robotId, mainFlowId, null);
-            RequestHandler requestHandler = new RequestHandler("http://10.247.144.182:12715/flow/answer");
+            RequestHandler requestHandler = new RequestHandler("http://127.0.0.1:12715/flow/answer");
             Response response;
             while (true) {
                 try {
@@ -44,7 +44,7 @@ public class Main {
                         System.out.println();
                         System.exit(0);
                     }
-                    if (request.getSessionId().isEmpty())
+                    if (request.getSessionId() == null || request.getSessionId().isEmpty())
                         request.setSessionId(data.getSessionId());
                 }
                 System.out.println("Input your question:");
