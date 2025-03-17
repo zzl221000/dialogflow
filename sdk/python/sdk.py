@@ -102,7 +102,7 @@ class Response(BaseModel):
     err: Optional[str] = None
 
 
-class DialogFlowChatBotSDK:
+class EasyFlowChatBotSDK:
     def __init__(self, endpoint: str):
         if not endpoint:
             raise ValueError("Endpoint cannot be empty.")
@@ -112,14 +112,10 @@ class DialogFlowChatBotSDK:
 
     def send_post_request(self, data: RequestData) -> Response:
         # Validate and set default values if necessary
-        if data.sessionId is None:
-            data.sessionId = ""
         if data.userInput is None:
             data.userInput = ""
         if data.userInputResult is None:
             data.userInputResult = UserInputResult.SUCCESSFUL
-        if data.importVariables is None:
-            data.importVariables = []
 
         try:
             print(data.to_dict())
@@ -155,10 +151,10 @@ class DialogFlowChatBotSDK:
 # 示例用法
 if __name__ == "__main__":
     try:
-        sdk = DialogFlowChatBotSDK("http://192.168.0.108:12715/flow/answer")
+        sdk = EasyFlowChatBotSDK("http://10.244.8.18:12715/flow/answer")
         request_data = RequestData(
-            robotId="r03d3slzkhr7y368qwqfkxfdtp",
-            mainFlowId="103d3slzkp1pdrzu1fnnve2wwm"
+            robotId="r03dkmf6c5psjbiwx52gr436pu",
+            mainFlowId="103dkmf6cu67ip1l7sidpmt889"
         )
 
         while True:
