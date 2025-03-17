@@ -42,14 +42,10 @@ public class RequestHandler {
 
     public Response req(RequestData requestData, int timeoutMillis) throws IOException, InterruptedException {
         // Check default value of request params
-        if (requestData.getSessionId() == null)
-            requestData.setSessionId("");
         if (requestData.getUserInput() == null)
             requestData.setUserInput("");
         if (requestData.getUserInputResult() == null)
             requestData.setUserInputResult(UserInputResult.SUCCESSFUL);
-        if (requestData.getImportVariables() == null)
-            requestData.setImportVariables(new ImportVariable[0]);
         // End
         return post(requestData, timeoutMillis);
     }
