@@ -222,6 +222,8 @@ impl RuntimeNode for TerminateNode {
 pub(crate) struct ExternalHttpCallNode {
     pub(super) next_node_id: String,
     pub(super) http_api_id: String,
+    pub(super) timeout_milliseconds: u64,
+    pub(super) async_req: bool,
 }
 
 impl RuntimeNode for ExternalHttpCallNode {
@@ -231,12 +233,12 @@ impl RuntimeNode for ExternalHttpCallNode {
             crate::external::http::crud::get_detail(&req.robot_id, self.http_api_id.as_str())
         {
             if let Some(api) = op {
-                if api.async_req {
-                    tokio::spawn(http::req_async(api, ctx.vars.clone(), true));
+                if self.async_req {
+                    tokio::spawn(http::req_async(api, self.timeout_milliseconds, ctx.vars.clone(), true));
                 } else {
                     tokio::task::block_in_place(/*move*/ || {
                         match tokio::runtime::Handle::current()
-                            .block_on(http::req(api, &ctx.vars, true))
+                            .block_on(http::req(api, self.timeout_milliseconds, &ctx.vars, true))
                         {
                             Ok(r) => match r {
                                 crate::external::http::dto::ResponseData::Str(_) => {}

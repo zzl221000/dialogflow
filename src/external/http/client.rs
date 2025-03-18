@@ -33,18 +33,20 @@ pub(crate) fn get_client(
 
 pub(crate) async fn req_async(
     info: HttpReqInfo,
+    timeout_milliseconds: u64,
     vars: HashMap<String, VariableValue>,
     ignore_response: bool,
 ) -> reqwest::Result<ResponseData> {
-    req(info, &vars, ignore_response).await
+    req(info, timeout_milliseconds, &vars, ignore_response).await
 }
 
 pub(crate) async fn req(
     info: HttpReqInfo,
+    timeout_milliseconds: u64,
     vars: &HashMap<String, VariableValue>,
     ignore_response: bool,
 ) -> reqwest::Result<ResponseData> {
-    let req = build_req(&info, vars)?;
+    let req = build_req(&info, timeout_milliseconds, vars)?;
     let res = req.send().await?;
     // println!("http status code {}", res.status().as_str());
     if ignore_response || res.status().as_u16() != 200 {
@@ -69,11 +71,12 @@ pub(crate) async fn req(
 
 fn build_req(
     info: &HttpReqInfo,
+    timeout_milliseconds: u64,
     vars: &HashMap<String, VariableValue>,
 ) -> reqwest::Result<RequestBuilder> {
     let client = reqwest::Client::builder()
         .connect_timeout(Duration::from_millis(1000))
-        .read_timeout(Duration::from_millis(info.timeout_milliseconds))
+        .read_timeout(Duration::from_millis(timeout_milliseconds))
         .build()?;
     let mut url = String::with_capacity(512);
     match info.protocol {

@@ -33,6 +33,8 @@ pub(crate) struct Variable {
     pub(crate) obtain_value_expression_type: VariableObtainValueExpressionType,
     #[serde(rename = "obtainValueExpression")]
     pub(crate) obtain_value_expression: String,
+    #[serde(rename = "timeoutMilliseconds")]
+    pub(crate) timeout_milliseconds: u64,
     #[serde(rename = "cacheEnabled")]
     pub(crate) cache_enabled: bool,
 }
@@ -120,7 +122,7 @@ impl Variable {
             // println!("get from cache");
             ctx.vars.get(&self.var_name)
         } else {
-            self.get_value2(req, ctx)
+            self.get_value_inner(req, ctx)
         }
         /*
         fn get_or_update(key: u32, map: &mut HashMap<u32, String>) -> Result<&str, Error> {
@@ -133,7 +135,7 @@ impl Variable {
         }
         */
     }
-    fn get_value2<'a, 'b>(
+    fn get_value_inner<'a, 'b>(
         &'a self,
         req: &'b Request,
         ctx: &'b mut Context,
@@ -173,7 +175,7 @@ impl Variable {
                         return tokio::task::block_in_place(
                             /*move*/
                             || match tokio::runtime::Handle::current()
-                                .block_on(crate::external::http::client::req(api, &ctx.vars, false))
+                                .block_on(crate::external::http::client::req(api, self.timeout_milliseconds, &ctx.vars, false))
                             {
                                 Ok(r) => match r {
                                     crate::external::http::dto::ResponseData::Str(s) => {

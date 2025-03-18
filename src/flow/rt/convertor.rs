@@ -264,6 +264,8 @@ fn convert_node(main_flow_id: &str, node: &mut Node) -> Result<()> {
             let node = ExternalHttpCallNode {
                 next_node_id: n.branches[0].target_node_id.clone(),
                 http_api_id: n.http_api_id.clone(),
+                timeout_milliseconds: n.timeout_milliseconds,
+                async_req: n.async_req,
             };
             let r = RuntimeNnodeEnum::ExternalHttpCallNode(node);
             let bytes = rkyv::to_bytes::<rkyv::rancor::Error>(&r).unwrap();
