@@ -31,25 +31,25 @@ pub(crate) fn get_client(
     Ok(client)
 }
 
-pub(crate) async fn req_async(
+pub(crate) async fn status_code(
     info: HttpReqInfo,
     timeout_milliseconds: u64,
     vars: HashMap<String, VariableValue>,
-    ignore_response: bool,
-) -> reqwest::Result<ResponseData> {
-    req(info, timeout_milliseconds, &vars, ignore_response).await
+) -> Result<u16> {
+    let req = build_req(&info, timeout_milliseconds, &vars)?;
+    let res = req.send().await?;
+    Ok(res.status().as_u16())
 }
 
 pub(crate) async fn req(
     info: HttpReqInfo,
     timeout_milliseconds: u64,
     vars: &HashMap<String, VariableValue>,
-    ignore_response: bool,
 ) -> reqwest::Result<ResponseData> {
     let req = build_req(&info, timeout_milliseconds, vars)?;
     let res = req.send().await?;
     // println!("http status code {}", res.status().as_str());
-    if ignore_response || res.status().as_u16() != 200 {
+    if res.status().as_u16() != 200 {
         return Ok(ResponseData::None);
     }
     let content_type = res

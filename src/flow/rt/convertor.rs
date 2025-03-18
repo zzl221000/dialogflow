@@ -261,8 +261,17 @@ fn convert_node(main_flow_id: &str, node: &mut Node) -> Result<()> {
             nodes.push((n.node_id.clone(), bytes));
         }
         Node::ExternalHttpNode(n) => {
+            let (successful_node_id, next_node_id) = if n.branches.len() == 2 {
+                (
+                    n.branches[0].target_node_id.clone(),
+                    n.branches[1].target_node_id.clone(),
+                )
+            } else {
+                (String::new(), n.branches[0].target_node_id.clone())
+            };
             let node = ExternalHttpCallNode {
-                next_node_id: n.branches[0].target_node_id.clone(),
+                successful_node_id: successful_node_id,
+                next_node_id: next_node_id,
                 http_api_id: n.http_api_id.clone(),
                 timeout_milliseconds: n.timeout_milliseconds,
                 async_req: n.async_req,

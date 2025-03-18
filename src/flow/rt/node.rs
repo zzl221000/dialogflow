@@ -220,6 +220,7 @@ impl RuntimeNode for TerminateNode {
 #[derive(Archive, Deserialize, Serialize)]
 #[rkyv(compare(PartialEq))]
 pub(crate) struct ExternalHttpCallNode {
+    pub(super) successful_node_id: String,
     pub(super) next_node_id: String,
     pub(super) http_api_id: String,
     pub(super) timeout_milliseconds: u64,
@@ -229,29 +230,39 @@ pub(crate) struct ExternalHttpCallNode {
 impl RuntimeNode for ExternalHttpCallNode {
     fn exec(&mut self, req: &Request, ctx: &mut Context, _response: &mut Response) -> bool {
         // println!("Into ExternalHttpCallNode");
+        let mut goto_node_id = &self.next_node_id;
         if let Ok(op) =
             crate::external::http::crud::get_detail(&req.robot_id, self.http_api_id.as_str())
         {
             if let Some(api) = op {
                 if self.async_req {
-                    tokio::spawn(http::req_async(api, self.timeout_milliseconds, ctx.vars.clone(), true));
+                    tokio::spawn(http::status_code(
+                        api,
+                        self.timeout_milliseconds,
+                        ctx.vars.clone(),
+                    ));
                 } else {
                     tokio::task::block_in_place(/*move*/ || {
-                        match tokio::runtime::Handle::current()
-                            .block_on(http::req(api, self.timeout_milliseconds, &ctx.vars, true))
-                        {
+                        match tokio::runtime::Handle::current().block_on(http::status_code(
+                            api,
+                            self.timeout_milliseconds,
+                            ctx.vars.clone(),
+                        )) {
                             Ok(r) => match r {
-                                crate::external::http::dto::ResponseData::Str(_) => {}
-                                crate::external::http::dto::ResponseData::Bin(_) => {}
-                                crate::external::http::dto::ResponseData::None => {}
+                                200u16 => {
+                                    goto_node_id = &self.successful_node_id;
+                                }
+                                _ => {}
                             },
-                            Err(e) => log::error!("{:?}", e),
+                            Err(e) => {
+                                log::error!("{:?}", e);
+                            }
                         }
                     });
                 }
             }
         }
-        add_next_node(ctx, &self.next_node_id);
+        add_next_node(ctx, goto_node_id);
         false
     }
 }
