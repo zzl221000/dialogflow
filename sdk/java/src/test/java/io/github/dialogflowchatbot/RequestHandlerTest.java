@@ -13,7 +13,7 @@ public class RequestHandlerTest {
     @Test
     void reqTest() throws IOException, InterruptedException {
         RequestData requestData = RequestData.create("r03dbzxp6zpk9uhkgcbw1ec604", "103dbzxp74kjwb148ubfmhgemb");
-        RequestHandler requestHandler = new RequestHandler("http://10.247.144.182:12715/flow/answer");
+        RequestHandler requestHandler = new RequestHandler("http://127.0.0.1:12715/flow/answer");
         Response res = requestHandler.req(requestData, 1000);
         assertNotNull(res);
         assertNotNull(res.getData());

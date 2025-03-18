@@ -1,12 +1,12 @@
 [package]
-name = "simpleflow_ai"
+name = "easyflow"
 version = "1.17.6"
 edition = "2024"
 homepage = "https://dialogflowchatbot.github.io/"
 authors = ["dialogflowchatbot <dialogflow@yeah.net>"]
 
 [lib]
-name = "simpleflow_ai"
+name = "easyflow"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 

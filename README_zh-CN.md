@@ -1,6 +1,6 @@
 简体中文 | [English](./README.md)
 
-欢迎给本项目，或者给[Github上的项目](https://github.com/dialogflowchatbot/dialogflow) ✨**Star**🎇!
+欢迎给本项目，或者给[Github上的项目](https://github.com/easyflow-ai/easyflow) ✨**Star**🎇!
 
 # Dialog flow chat bot
 **只有一个执行文件** 的AI工具，不用安装任何依赖就可以**直接使用**, 它包含了意图识别，AI模型管理，可视化的流程编辑器，和应答逻辑.  

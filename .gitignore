@@ -22,6 +22,6 @@ src/resources/assets/assets/*.gz
 flow.db
 dialogflow.exe
 TODO.txt
-index.html
+# index.html
 /data
 .idea
