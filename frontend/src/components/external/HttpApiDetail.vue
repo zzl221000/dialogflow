@@ -21,14 +21,14 @@ const httpApiData = reactive({
   protocol: 'http://',
   method: 'GET',
   address: '',
-  timeoutMilliseconds: '1500',
+  // timeoutMilliseconds: '1500',
   postContentType: 'UrlEncoded',
   headers: [],
   queryParams: [],
   formData: [],
   requestBody: '',
   userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/123.0',
-  asyncReq: false,
+  // asyncReq: false,
 })
 const param = reactive({
   name: '',
@@ -197,9 +197,6 @@ const changeTab = (v) => {
     </el-form>
     <el-text tag="b" size="large">Advanced</el-text>
     <el-form :model="httpApiData" label-width="90px">
-      <el-form-item label="Timed out">
-        <el-input-number v-model="httpApiData.timeoutMilliseconds" :min="200" :max="600000" /> milliseconds
-      </el-form-item>
       <el-form-item label="Parameters">
         <el-tabs v-model="activeName" class="demo-tabs" @tab-click="handleClick">
           <el-tab-pane label="Header" name="h">
@@ -272,11 +269,6 @@ const changeTab = (v) => {
       </el-form-item>
       <el-form-item label="User agent">
         <el-input v-model="httpApiData.userAgent" />
-      </el-form-item>
-      <el-form-item label="Sync/Async" :label-width="formLabelWidth">
-        <!-- <el-switch v-model="httpApiData.asyncReq" class="mb-2" active-text="Asynchronous" inactive-text="Synchronous" /> -->
-        <input type="checkbox" id="_asyncReq_" v-model="httpApiData.asyncReq" :checked="httpApiData.asyncReq" /><label
-          for="_asyncReq_">Asynchronous</label>
       </el-form-item>
       <el-form-item>
         <el-button type="primary" @click="save">Save</el-button>

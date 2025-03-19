@@ -13,10 +13,13 @@ const formLabelWidth = '100px'
 const apis = reactive([])
 const nodeName = ref()
 const apisRef = ref()
+let originAsyncReqSetting = false;
 const nodeData = reactive({
     nodeName: 'ExternalHttpNode',
     httpApiName: '',
     httpApiId: '',
+    timeoutMilliseconds: 1500,
+    asyncReq: false,
     valid: false,
     invalidMessages: [],
     newNode: true,
@@ -33,10 +36,11 @@ const validate = () => {
     d.valid = m.length == 0;
 }
 const saveForm = () => {
-    const port = getNode().getPortAt(0);
-    const branch = nodeData.branches[0];
-    branch.branchName = 'Next';
-    branch.branchId = port.id;
+    // const port = getNode().getPortAt(0);
+    // const branch = nodeData.branches[0];
+    // branch.branchName = 'Next';
+    // branch.branchId = port.id;
+    addBranches();
     validate();
     // console.log(this.nodeData);
     node.removeData({ silent: true });
@@ -56,7 +60,63 @@ const hideForm = () => {
 }
 node.on("change:data", ({ current }) => {
     nodeSetFormVisible.value = true;
+    originAsyncReqSetting = node.getData().asyncReq;
 });
+const addBranches = () => {
+    if (originAsyncReqSetting == nodeData.asyncReq)
+        return;
+    node.removePorts();
+    nodeData.branches = [];
+    if (nodeData.asyncReq) {
+        node.addPort({
+            group: 'absolute',
+            args: { x: nodeName.value.offsetWidth - 15, y: nodeName.value.offsetHeight + 50 },
+            attrs: {
+                text: {
+                    text: 'Next',
+                    fontSize: 12,
+                },
+            },
+
+        });
+        nodeData.branches.push(getDefaultBranch())
+        const port = node.getPortAt(0);
+        const branch = nodeData.branches[0];
+        branch.branchName = port.attrs.text.text;
+        branch.branchId = port.id;
+    } else {
+        node.addPort({
+            group: 'absolute',
+            args: { x: nodeName.value.offsetWidth - 15, y: nodeName.value.offsetHeight + 40 },
+            attrs: {
+                text: {
+                    text: 'Success',
+                    fontSize: 12,
+                },
+            },
+        });
+        node.addPort({
+            group: 'absolute',
+            args: { x: nodeName.value.offsetWidth - 15, y: nodeName.value.offsetHeight + 56 },
+            attrs: {
+                text: {
+                    text: 'Fail',
+                    fontSize: 12,
+                },
+            },
+        });
+        nodeData.branches.push(getDefaultBranch())
+        nodeData.branches.push(getDefaultBranch())
+        let port = node.getPortAt(0);
+        let branch = nodeData.branches[0];
+        branch.branchName = port.attrs.text.text;
+        branch.branchId = port.id;
+        port = node.getPortAt(1);
+        branch = nodeData.branches[1];
+        branch.branchName = port.attrs.text.text;
+        branch.branchId = port.id;
+    }
+}
 onMounted(async () => {
     // console.log('httpNode')
     const t = await httpReq('GET', 'external/http', { robotId: robotId }, null, null);
@@ -69,18 +129,8 @@ onMounted(async () => {
             }
         }
     }
-    node.addPort({
-        group: 'absolute',
-        args: { x: nodeName.value.offsetWidth - 15, y: nodeName.value.offsetHeight + 50 },
-        attrs: {
-            text: {
-                text: 'Next',
-                fontSize: 12,
-            },
-        },
-
-    });
-    nodeData.branches.push(getDefaultBranch())
+    nodeData.newNode = false;
+    addBranches()
 })
 </script>
 <style scoped>
@@ -131,12 +181,20 @@ onMounted(async () => {
                         <el-option v-for="item in apis" :key="item.id" :label="item.name" :value="item.id" />
                     </el-select>
                 </el-form-item>
-                <el-form-item label="" :label-width="formLabelWidth">
+                <el-form-item label="Timeout" :label-width="formLabelWidth">
+                    <el-input-number v-model="nodeData.timeoutMilliseconds" :min="200" :max="600000" /> milliseconds
+                </el-form-item>
+                <el-form-item label="Sync/Async" :label-width="formLabelWidth">
+                    <!-- <el-switch v-model="httpApiData.asyncReq" class="mb-2" active-text="Asynchronous" inactive-text="Synchronous" /> -->
+                    <input type="checkbox" id="_asyncReq_" v-model="nodeData.asyncReq"
+                        :checked="nodeData.asyncReq" /><label for="_asyncReq_">Asynchronous</label>
+                </el-form-item>
+                <!-- <el-form-item label="" :label-width="formLabelWidth">
                     <el-select ref="apisRef" v-model="nodeData.httpApiId" placeholder="Choose an http interface"
                         @change="(v) => showOptions(v)">
                         <el-option v-for="item in apis" :key="item.id" :label="item.name" :value="item.id" />
                     </el-select>
-                </el-form-item>
+                </el-form-item> -->
                 <el-form-item label="" :label-width="formLabelWidth">
                     <el-text size="large">
                         <div><strong>Please note</strong> that this is just calling the interface, but the returned data

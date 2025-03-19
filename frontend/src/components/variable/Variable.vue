@@ -16,6 +16,7 @@ const varData = reactive({
     varAssociateData: '',
     obtainValueExpressionType: 'None',
     obtainValueExpression: '',
+    timeoutMilliseconds: 1500,
     cacheEnabled: true,
 });
 const varTypes = [
@@ -157,12 +158,12 @@ async function saveForm() {
         <template #content>
             <span class="text-large font-600 mr-3"> {{ $t('lang.var.title') }} </span>
         </template>
-        <template #extra>
+<template #extra>
             <div class="flex items-center">
                 <el-button type="primary" class="ml-2" @click="newVar()">{{ $t('lang.var.add') }}</el-button>
             </div>
         </template>
-    </el-page-header> -->
+</el-page-header> -->
     <h1>{{ $t('lang.var.title') }}</h1>
     <el-button type="primary" class="ml-2" @click="newVar()">{{ $t('lang.var.add') }}</el-button>
     <el-table :data="tableData" stripe style="width: 100%">
@@ -222,6 +223,9 @@ async function saveForm() {
                 :label-width="formLabelWidth">
                 <el-input v-model="varData.obtainValueExpression" autocomplete="on"
                     :placeholder="varData.obtainValueExpressionType == 'JsonPointer' ? '/data/book/name' : 'CSS selector syntax like: h1.foo div#bar'" />
+            </el-form-item>
+            <el-form-item v-if="varData.varValueSource == 'ExternalHttp'" label="Timeout" :label-width="formLabelWidth">
+                <el-input-number v-model="varData.timeoutMilliseconds" :min="200" :max="600000" /> milliseconds
             </el-form-item>
             <el-form-item v-if="varData.varValueSource == 'ExternalHttp'" label="Cache value"
                 :label-width="formLabelWidth">

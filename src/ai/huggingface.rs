@@ -516,7 +516,7 @@ pub(crate) async fn download_hf_models(
 
     let mut headers = HeaderMap::new();
     let user_agent = format!(
-        "unkown/None; dialogflowchatbot/{}; rust/unknown",
+        "unkown/None; easyflow-ai/{}; rust/unknown",
         crate::web::server::VERSION
     );
     headers.insert("User-Agent", HeaderValue::from_str(&user_agent)?);

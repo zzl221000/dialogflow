@@ -113,7 +113,7 @@ const toSettings = () => {
           {{ item }}
         </li>
       </ol>
-      <a href="https://github.com/dialogflowchatbot/dialogflow/releases">Go to download</a>
+      <a href="https://github.com/easyflow-ai/easyflow/releases">Go to download</a>
     </template>
   </el-popover>
   <el-alert v-show="checkUpdateResult == 2" title="You're using the latest verion." type="success"
@@ -223,7 +223,7 @@ const toSettings = () => {
       <EpArrowRightBold />
     </el-icon>
     <!-- <router-link to="/docs">{{ $t('lang.guide.nav5') }}</router-link> -->
-    <a href="https://dialogflowchatbot.github.io/docs" target="_blank">
+    <a href="https://easyflow-ai.github.io/docs" target="_blank">
       {{ $t('lang.guide.nav5') }}
       <el-icon>
         <BiBoxArrowUpRight />

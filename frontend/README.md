@@ -10,7 +10,7 @@ Setup a condition branch
 ---
 
 Hi there.  
-This is a sub-project of [Dialog flow chat bot](https://github.com/dialogflowchatbot/dialogflow)  
+This is a sub-project of [EasyFlow](https://github.com/easyflow-ai/easyflow)  
 It's built on Vue3
 
 ## Recommended IDE Setup
@@ -20,8 +20,8 @@ It's built on Vue3
 ## Project Setup
 
 ```sh
-git clone https://github.com/dialogflowchatbot/dialogflow
-cd dialogflow
+git clone https://github.com/easyflow-ai/easyflow
+cd easyflow
 cd frontend
 npm install
 ```

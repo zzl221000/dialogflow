@@ -2,7 +2,7 @@
 name = "easyflow"
 version = "1.17.6"
 edition = "2024"
-homepage = "https://dialogflowchatbot.github.io/"
+homepage = "https://easyflow-ai.github.io/"
 authors = ["dialogflowchatbot <dialogflow@yeah.net>"]
 
 [lib]
@@ -79,7 +79,7 @@ lopdf = "0.36.0"
 # lancedb = "0.13.0"
 libsqlite3-sys = { version = "0.30", features = ["bundled"] }
 validator = "0.20"
-zip = "2.2.3"
+zip = "2.4.1"
 quick-xml = "0.37.2"
 # usearch = "2.17"
 # cxx = "1.0"

@@ -246,7 +246,7 @@ async function deleteRobot() {
         <EpArrowRightBold />
       </el-icon>
       <!-- <router-link to="/doc">{{ $t('lang.guide.nav5') }}</router-link> -->
-      <a href="https://dialogflowchatbot.github.io/doc" target="_blank">
+      <a href="https://easyflow-ai.github.io/doc" target="_blank">
         {{ $t('lang.guide.nav5') }}
         <el-icon>
           <BiBoxArrowUpRight />
