@@ -15,7 +15,7 @@
 
 # Give it a try!
 * 🐋 **Docker** We provided an image on Docker Hub at [dialogflowchatbot/demo](https://hub.docker.com/repository/docker/dialogflowchatbot/demo)
-* 💻 **Binary releases**, please check [here](https://github.com/dialogflowchatbot/dialogflow/releases)
+* 💻 **Binary releases**, please check [here](https://github.com/easyflow-ai/easyflow/releases)
 
 > By default application will listen to `127.0.0.1:12715`, you can use `-ip` and `-port` specify new value, e.g.: `dialogflow -ip 0.0.0.0 -port 8888`
 
@@ -25,7 +25,7 @@
 * 🎨 The **front end** of this application is [here](https://github.com/dialogflowchatbot/dialogflow-frontend) -->
 
 # Check out introduction page
-[https://dialogflowchatbot.github.io/](https://dialogflowchatbot.github.io/#/)
+[https://easyflow-ai.github.io/](https://easyflow-ai.github.io/)
 
 # Function nodes
 |Node|Name|
@@ -69,7 +69,7 @@ Using the different nodes above, to arrange and combine, you can get a conversat
 3. Open your browser and visit: http://127.0.0.1:12715/
 
 ### Binary release
-1. From [Github release page](https://github.com/dialogflowchatbot/dialogflow/releases), depending on the operating system, download the application.
+1. From [Github release page](https://github.com/easyflow-ai/easyflow/releases), depending on the operating system, download the application.
 1. Run it directly, or use the `-ip` and `-port` parameters to perform the listening IP address and port, e.g.: `dialogflow -ip 0.0.0.0 -port 8888`.
 1. Open your browser and visit http://localhost:12715 (by default) or http://`new IP`:`new port` to see the application in action
 1. Add a main flow and click its name into it

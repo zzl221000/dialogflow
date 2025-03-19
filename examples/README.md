@@ -4,8 +4,8 @@ Please check [html folder](./html)
 ### Java
 You can refer to: [Java SDK](../sdk/java), in the file: `Main.java`. 
 ```
-git clone https://github.com/dialogflowchatbot/dialogflow
-cd dialogflow
+git clone https://github.com/easyflow-ai/easyflow
+cd easyflow
 cd sdk
 cd java
 # It's a Maven project
@@ -13,8 +13,8 @@ cd java
 
 ### Python
 ```
-git clone https://github.com/dialogflowchatbot/dialogflow
-cd dialogflow
+git clone https://github.com/easyflow-ai/easyflow
+cd easyflow
 cd sdk
 cd python
 # pip install requests

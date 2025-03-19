@@ -1,5 +1,5 @@
 "use strict";
-class DialogFlowChatBotSDK {
+class EasyFlowAiSDK {
     constructor(url) {
         this.url = url;
     }
@@ -54,4 +54,4 @@ class DialogFlowChatBotSDK {
     }
 }
 
-export { DialogFlowChatBotSDK };
+export { EasyFlowAiSDK };

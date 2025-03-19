@@ -2,7 +2,7 @@
 name = "easyflow"
 version = "1.17.6"
 edition = "2024"
-homepage = "https://dialogflowchatbot.github.io/"
+homepage = "https://easyflow-ai.github.io/"
 authors = ["dialogflowchatbot <dialogflow@yeah.net>"]
 
 [lib]
