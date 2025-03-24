@@ -1,7 +1,7 @@
 
 ```
-git clone https://github.com/easyflow-ai/easyflow
-cd easyflow
+git clone https://github.com/dialogflowai/dialogflow
+cd dialogflow
 cd sdk
 cd python
 # pip install requests

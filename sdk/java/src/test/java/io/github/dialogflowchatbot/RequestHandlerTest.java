@@ -1,7 +1,7 @@
-package io.github.dialogflowchatbot;
+package io.github.dialogflowai;
 
-import io.github.dialogflowchatbot.sdk.RequestData;
-import io.github.dialogflowchatbot.sdk.Response;
+import io.github.dialogflowai.sdk.RequestData;
+import io.github.dialogflowai.sdk.Response;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;

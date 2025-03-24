@@ -1,11 +1,11 @@
-package io.github.dialogflowchatbot;
+package io.github.dialogflowai;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.github.dialogflowchatbot.sdk.ImportVariable;
-import io.github.dialogflowchatbot.sdk.RequestData;
-import io.github.dialogflowchatbot.sdk.Response;
-import io.github.dialogflowchatbot.sdk.UserInputResult;
+import io.github.dialogflowai.sdk.ImportVariable;
+import io.github.dialogflowai.sdk.RequestData;
+import io.github.dialogflowai.sdk.Response;
+import io.github.dialogflowai.sdk.UserInputResult;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;

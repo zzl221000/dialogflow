@@ -1,6 +1,6 @@
-package io.github.dialogflowchatbot;
+package io.github.dialogflowai;
 
-import io.github.dialogflowchatbot.sdk.*;
+import io.github.dialogflowai.sdk.*;
 
 import java.io.IOException;
 import java.util.List;

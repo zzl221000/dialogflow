@@ -170,7 +170,7 @@ pub async fn start_app() {
         port.to_string().blue()
     );
     log::info!("Current version: {}", VERSION);
-    log::info!("Visiting https://easyflow-ai.github.io/ for the latest releases");
+    log::info!("Visiting https://dialogflowai.github.io/ for the latest releases");
 
     log::info!(
         "  -->  Press {} to terminate this application",
@@ -345,7 +345,7 @@ async fn version() -> impl IntoResponse {
 }
 
 async fn check_new_version() -> impl IntoResponse {
-    let r = reqwest::get("https://easyflow-ai.github.io/check-new-version.json").await;
+    let r = reqwest::get("https://dialogflowai.github.io/check-new-version.json").await;
     if let Err(e) = r {
         return to_res(Err(Error::NetworkConnectTimeout(e)));
     }

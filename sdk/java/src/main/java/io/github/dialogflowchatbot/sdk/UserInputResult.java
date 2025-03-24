@@ -1,4 +1,4 @@
-package io.github.dialogflowchatbot.sdk;
+package io.github.dialogflowai.sdk;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 

@@ -1,4 +1,4 @@
-package io.github.dialogflowchatbot.sdk;
+package io.github.dialogflowai.sdk;
 
 public class CollectData extends VarData {
 }

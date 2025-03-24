@@ -14,18 +14,18 @@
 * 🔐 **Safe** 100% open source, all runtime data is saved locally (Using `OpenAI API` may expose some data).
 
 # Give it a try!
-* 🐋 **Docker** We provided an image on Docker Hub at [dialogflowchatbot/demo](https://hub.docker.com/repository/docker/dialogflowchatbot/demo)
-* 💻 **Binary releases**, please check [here](https://github.com/easyflow-ai/easyflow/releases)
+* 🐋 **Docker** We provided an image on Docker Hub at [dialogflowai/demo](https://hub.docker.com/repository/docker/dialogflowai/demo)
+* 💻 **Binary releases**, please check [here](https://github.com/dialogflowai/dialogflow/releases)
 
 > By default application will listen to `127.0.0.1:12715`, you can use `-ip` and `-port` specify new value, e.g.: `dialogflow -ip 0.0.0.0 -port 8888`
 
 <!-- # Releases and source code
-* 💾 If you're looking for **binary releases**, please check [here](https://github.com/dialogflowchatbot/dialogflow/releases)
+* 💾 If you're looking for **binary releases**, please check [here](https://github.com/dialogflowai/dialogflow/releases)
 * 🎈 The **back end** of this application is [here](https://github.com/dialogflowchatbot/dialogflow-backend)
 * 🎨 The **front end** of this application is [here](https://github.com/dialogflowchatbot/dialogflow-frontend) -->
 
 # Check out introduction page
-[https://easyflow-ai.github.io/](https://easyflow-ai.github.io/)
+[https://dialogflowai.github.io/](https://dialogflowai.github.io/)
 
 # Function nodes
 |Node|Name|
@@ -64,12 +64,12 @@ Using the different nodes above, to arrange and combine, you can get a conversat
 # Get started
 
 ### Docker image
-1. docker pull dialogflowchatbot/demo
-2. docker run -dp 127.0.0.1:12715:12715 --name dialogflowdemo dialogflowchatbot/demo
+1. docker pull dialogflowai/demo
+2. docker run -dp 127.0.0.1:12715:12715 --name dialogflowdemo dialogflowai/demo
 3. Open your browser and visit: http://127.0.0.1:12715/
 
 ### Binary release
-1. From [Github release page](https://github.com/easyflow-ai/easyflow/releases), depending on the operating system, download the application.
+1. From [Github release page](https://github.com/dialogflowai/dialogflow/releases), depending on the operating system, download the application.
 1. Run it directly, or use the `-ip` and `-port` parameters to perform the listening IP address and port, e.g.: `dialogflow -ip 0.0.0.0 -port 8888`.
 1. Open your browser and visit http://localhost:12715 (by default) or http://`new IP`:`new port` to see the application in action
 1. Add a main flow and click its name into it

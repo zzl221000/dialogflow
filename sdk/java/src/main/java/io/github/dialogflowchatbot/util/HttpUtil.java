@@ -1,4 +1,4 @@
-package io.github.dialogflowchatbot.util;
+package io.github.dialogflowai.util;
 
 import lombok.extern.slf4j.Slf4j;
 

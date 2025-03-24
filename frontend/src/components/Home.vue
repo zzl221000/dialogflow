@@ -203,7 +203,7 @@ const compareDifferentRobotTypeData = [
           {{ item }}
         </li>
       </ol>
-      <a href="https://github.com/easyflow-ai/easyflow/releases">Go to download</a>
+      <a href="https://github.com/dialogflowai/dialogflow/releases">Go to download</a>
     </template>
   </el-popover>
   <el-alert v-show="checkUpdateResult == 2" title="You're using the latest verion." type="success"
@@ -283,7 +283,7 @@ const compareDifferentRobotTypeData = [
         <EpArrowRightBold />
       </el-icon>
       <!-- <router-link to="/docs">{{ $t('lang.guide.nav5') }}</router-link> -->
-      <a href="https://easyflow-ai.github.io/doc" target="_blank">
+      <a href="https://dialogflowai.github.io/doc" target="_blank">
         {{ $t('lang.guide.nav5') }}
         <el-icon>
           <BiBoxArrowUpRight />
@@ -295,9 +295,9 @@ const compareDifferentRobotTypeData = [
   <div>
     <div class="text-center">
       Version: {{ currentVersion }}<br />
-      <a href="https://easyflow-ai.github.io/" target="_blank">https://easyflow-ai.github.io/</a><br />
+      <a href="https://dialogflowai.github.io/" target="_blank">https://dialogflowai.github.io/</a><br />
       If you have any questions or suggestions, please
-      create a <a href="https://github.com/easyflow-ai/easyflow/discussions" target="_blank">discussion</a> on
+      create a <a href="https://github.com/dialogflowai/dialogflow/discussions" target="_blank">discussion</a> on
       Github
       or
       email to: dialogflow@yeah.net
