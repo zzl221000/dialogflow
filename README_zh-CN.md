@@ -1,6 +1,6 @@
 简体中文 | [English](./README.md)
 
-欢迎给本项目，或者给[Github上的项目](https://github.com/easyflow-ai/easyflow) ✨**Star**🎇!
+欢迎给本项目，或者给[Github上的项目](https://github.com/dialogflowai/dialogflow) ✨**Star**🎇!
 
 # Dialog flow chat bot
 **只有一个执行文件** 的AI工具，不用安装任何依赖就可以**直接使用**, 它包含了意图识别，AI模型管理，可视化的流程编辑器，和应答逻辑.  
@@ -16,18 +16,18 @@
 * 🔐 **安全** 100% 开源, 所有运行时的数据, 都保存在本地 (使用 `OpenAI API` 可能会暴露一些数据).
 
 # 现在就尝试一下!
-* 🐋 **Docker** 我们提供了一个`Docker`镜像: [dialogflowchatbot/demo](https://hub.docker.com/repository/docker/dialogflowchatbot/demo)
-* 💻 **可直接执行的发布版本**, 请通过发布页: [点击这里](https://github.com/easyflow-ai/easyflow/releases) , 根据不同的平台下载（支持：Windows、Linux、macOS）
+* 🐋 **Docker** 我们提供了一个`Docker`镜像: [dialogflowai/demo](https://hub.docker.com/repository/docker/dialogflowai/demo)
+* 💻 **可直接执行的发布版本**, 请通过发布页: [点击这里](https://github.com/dialogflowai/dialogflow/releases) , 根据不同的平台下载（支持：Windows、Linux、macOS）
 
 > 默认情况下, 应用会监听: `127.0.0.1:12715`, 你可以使用 `-ip` 参数和 `-port` 参数, 来指定新的监听地址和端口, 例如: `dialogflow -ip 0.0.0.0 -port 8888`
 
 <!-- # Releases and source code
-* 💾 If you're looking for **binary releases**, please check [here](https://github.com/easyflow-ai/easyflow/releases)
+* 💾 If you're looking for **binary releases**, please check [here](https://github.com/dialogflowai/dialogflow/releases)
 * 🎈 The **back end** of this application is [here](https://github.com/dialogflowchatbot/dialogflow-backend)
 * 🎨 The **front end** of this application is [here](https://github.com/dialogflowchatbot/dialogflow-frontend) -->
 
 # 查看详细介绍, 了解更多信息
-[https://easyflow-ai.github.io/](https://easyflow-ai.github.io/)
+[https://dialogflowai.github.io/](https://dialogflowai.github.io/)
 
 # 功能节点列表
 |节点|名称|
@@ -66,12 +66,12 @@
 # 现在就开始使用
 
 ### Docker 镜像
-1. docker pull dialogflowchatbot/demo
-2. docker run -dp 127.0.0.1:12715:12715 --name dialogflowdemo dialogflowchatbot/demo
+1. docker pull dialogflowai/demo
+2. docker run -dp 127.0.0.1:12715:12715 --name dialogflowdemo dialogflowai/demo
 3. 打开浏览器并访问: http://127.0.0.1:12715/ 打开应用界面
 
 ### 发布版本
-1. 从 [Github release page](https://github.com/easyflow-ai/easyflow/releases), 选择不同系统并下载.
+1. 从 [Github release page](https://github.com/dialogflowai/dialogflow/releases), 选择不同系统并下载.
 1. 直接执行, 或者使用 `-ip` 和 `-port` 修改监听地址, 如: `dialogflow -ip 0.0.0.0 -port 8888`.
 1. 打开浏览器并访问 http://localhost:12715 (默认) 或 http://`新的IP`:`新的端口` 打开应用界面
 1. 进入一个机器人

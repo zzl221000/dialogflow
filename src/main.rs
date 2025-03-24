@@ -8,7 +8,7 @@ use env_logger::{Builder as LoggerBuilder, Target};
 use tokio::runtime::Builder;
 // use triple_accel::levenshtein::levenshtein_simd_k;
 
-use easyflow::web::server::start_app;
+use dialogflowai::web::server::start_app;
 
 // Avoid musl's default allocator due to lackluster performance
 // https://nickb.dev/blog/default-musl-allocator-considered-harmful-to-performance
@@ -31,7 +31,7 @@ fn main() {
 
     let runtime = Builder::new_multi_thread()
         .worker_threads(4)
-        .thread_name("easyflow-ai")
+        .thread_name("dialogflowai")
         .thread_stack_size(3 * 1024 * 1024)
         .enable_io()
         .enable_time()

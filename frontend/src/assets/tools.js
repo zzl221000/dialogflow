@@ -136,7 +136,7 @@ export function l(m) {
 
 export function isOnGithub() {
     const u = window.location.href;
-    return u.indexOf('easyflow-ai.github.io') > -1;
+    return u.indexOf('dialogflowai.github.io') > -1;
 }
 
 export function persistRobotDetail(robotDetail) {
