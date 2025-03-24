@@ -74,7 +74,7 @@ impl Variable {
         ctx: &'a mut Context,
         s: &'b str,
     ) -> Option<&'a VariableValue> {
-        let mut str_store: Option<String> = None;
+        let str_store: Option<String>;
         let r = match self.obtain_value_expression_type {
             VariableObtainValueExpressionType::JsonPointer => {
                 if let Ok(v) = serde_json::from_str::<serde_json::Value>(s) {
@@ -94,11 +94,12 @@ impl Variable {
             }
             VariableObtainValueExpressionType::HtmlScrape => {
                 str_store = self.get_data_from_scraper(s);
-                if str_store.is_some() {
-                    str_store.as_ref().unwrap()
-                } else {
-                    s
-                }
+                str_store.as_deref().unwrap_or(s)
+                // if str_store.is_some() {
+                //     str_store.as_ref().unwrap()
+                // } else {
+                //     s
+                // }
             }
             VariableObtainValueExpressionType::JavaScript => s,
             VariableObtainValueExpressionType::None => s,
