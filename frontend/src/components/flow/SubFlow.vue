@@ -357,8 +357,10 @@ onMounted(async () => {
     // console.log('offsetHeight=' + canvas.offsetHeight);
     graph = new Graph({
         container: canvas,
-        width: canvas.offsetWidth - 10,
-        height: canvas.offsetHeight,
+        width: '100%',
+        // width: canvas.offsetWidth - 10,
+        height: '100%',
+        // height: canvas.offsetHeight,
         // height: 500,
         background: {
             color: "#F2F7FA",
@@ -738,7 +740,7 @@ const popupRundryWindow = async () => {
 }
 
 #canvas {
-    min-height: 85vh;
+    height: calc(100vh - 43px);
 }
 
 .node-btn {
