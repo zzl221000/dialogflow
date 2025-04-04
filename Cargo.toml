@@ -20,8 +20,8 @@ name = "dialogflowai"
 # End
 # artful = "0.1.1"
 anyhow = "1.0.97"
-axum = {version = "0.8.1", features = ["query", "tokio", "macros", "multipart"]}
-bigdecimal = "0.4.7"
+axum = {version = "0.8.3", features = ["query", "tokio", "macros", "multipart"]}
+bigdecimal = "0.4.8"
 # bytes = "1.9"
 # candle-core = { git = "https://github.com/huggingface/candle.git", version = "0.5.1" }
 candle = { version = "0.8.4", package = "candle-core", default-features = false }
@@ -52,7 +52,7 @@ itoa = "1.0.15"
 # paste = "1.0"
 redb = "2.4.0"
 regex = "1.11.1"
-reqwest = { version = "0.12.14", default-features = false, features = ["native-tls", "stream"] }
+reqwest = { version = "0.12.15", default-features = false, features = ["native-tls", "stream"] }
 rkyv = {version = "0.8.10", features = ["aligned", "alloc", "bytecheck"]}
 scru128 = "3.1.0"
 serde = { version = "1.0.219", features = ["derive"] }
@@ -69,8 +69,8 @@ tower-http = { version = "0.6.2", features = ["cors", "limit"] }
 tokio = { version = "1.44.1", features = ["fs", "io-util", "macros", "net", "rt", "rt-multi-thread", "signal", "time"] }
 tokio-stream = "0.1.17"
 # tracing-subscriber = "0.3"
-log = "0.4.26"
-env_logger = "0.11.7"
+log = "0.4.27"
+env_logger = "0.11.8"
 lettre = { version = "0.11.15", default-features = false, features = ["builder", "tokio1", "smtp-transport", "tokio1-native-tls", "pool"]}
 unicase = "2.8.1"
 sqlx = { version = "0.8.3", default-features = false, features = ["runtime-tokio", "sqlite", "macros"] }
@@ -79,31 +79,31 @@ lopdf = "0.36.0"
 # lancedb = "0.13.0"
 libsqlite3-sys = { version = "0.30", features = ["bundled"] }
 validator = "0.20"
-zip = "2.5.0"
-quick-xml = "0.37.2"
+zip = "2.6.0"
+quick-xml = "0.37.4"
 # usearch = "2.17"
 # cxx = "1.0"
 # triple_accel = "0.4.0"
 # [target.'cfg(not(target_os = "linux"))'.dependencies]
 sqlite-vec = "0.1.6"
-text-splitter = { version = "0.25.0", default-features = false, features = ["tokenizers"] }
+text-splitter = { version = "0.25.1", default-features = false, features = ["tokenizers"] }
 # sqlite-vec = { path = "/mnt/d/work/sqlite-vec/bindings/rust/" }
 
 [build-dependencies]
-flate2 = "1.1.0"
+flate2 = "1.1.1"
 # cc = "1.2.8"
 
 [target.'cfg(windows)'.dependencies]
-windows = {version = "0.61", features = ["Win32_Globalization","Win32_System_SystemServices"]}
+windows = {version = "0.61.1", features = ["Win32_Globalization","Win32_System_SystemServices"]}
 
 # https://doc.rust-lang.org/cargo/reference/specifying-dependencies.html#platform-specific-dependencies
 # https://doc.rust-lang.org/reference/conditional-compilation.html
 [target.'cfg(target_env = "gnu")'.dependencies]
-openssl = { version = "0.10", features = ["vendored"] }
+openssl = { version = "0.10.72", features = ["vendored"] }
 
 [target.'cfg(target_env = "musl")'.dependencies]
-openssl = { version = "0.10", features = ["vendored"] }
-mimalloc = "0.1.43"
+openssl = { version = "0.10.72", features = ["vendored"] }
+mimalloc = "0.1.45"
 
 [profile.dev]
 debug = 2
