@@ -129,8 +129,9 @@ onMounted(async () => {
             }
         }
     }
+    copyProperties(node.getData(), nodeData);
     nodeData.newNode = false;
-    addBranches()
+    // addBranches()
 })
 </script>
 <style scoped>
@@ -181,13 +182,13 @@ onMounted(async () => {
                         <el-option v-for="item in apis" :key="item.id" :label="item.name" :value="item.id" />
                     </el-select>
                 </el-form-item>
-                <el-form-item label="Timeout" :label-width="formLabelWidth">
-                    <el-input-number v-model="nodeData.timeoutMilliseconds" :min="200" :max="600000" /> milliseconds
-                </el-form-item>
                 <el-form-item label="Sync/Async" :label-width="formLabelWidth">
                     <!-- <el-switch v-model="httpApiData.asyncReq" class="mb-2" active-text="Asynchronous" inactive-text="Synchronous" /> -->
                     <input type="checkbox" id="_asyncReq_" v-model="nodeData.asyncReq"
                         :checked="nodeData.asyncReq" /><label for="_asyncReq_">Asynchronous</label>
+                </el-form-item>
+                <el-form-item label="Timeout" :label-width="formLabelWidth" v-show="!nodeData.asyncReq">
+                    <el-input-number v-model="nodeData.timeoutMilliseconds" :min="200" :max="600000" /> milliseconds
                 </el-form-item>
                 <!-- <el-form-item label="" :label-width="formLabelWidth">
                     <el-select ref="apisRef" v-model="nodeData.httpApiId" placeholder="Choose an http interface"
