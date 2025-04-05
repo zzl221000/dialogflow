@@ -171,7 +171,7 @@ impl Node {
                     Self::err(f, t, &n.node_name, "verification failed")
                 } else if n.node_name.is_empty() {
                     Self::err(f, t, &n.node_name, "node name not filled in")
-                } else if n.branches.len() != 1 {
+                } else if n.branches.len() < 1 || n.branches.len() > 2 {
                     Self::err(f, t, &n.node_name, "Branch information is incorrect")
                 } else {
                     if n.http_api_id.is_empty() {

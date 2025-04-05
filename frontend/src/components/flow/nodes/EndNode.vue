@@ -8,13 +8,14 @@ const nodeSetFormVisible = ref(false);
 const nodeData = reactive({
     nodeName: 'The end',
     endingText: '',
-    valid: false,
+    valid: true,
     invalidMessages: [],
     newNode: true,
 });
 const nodeName = ref();
 const getNode = inject('getNode');
 const node = getNode();
+node.setData(nodeData, { silent: false });
 node.on("change:data", ({ current }) => {
     nodeSetFormVisible.value = true;
 });
