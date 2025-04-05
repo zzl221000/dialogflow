@@ -90,7 +90,7 @@ const addBranches = () => {
             args: { x: nodeName.value.offsetWidth - 15, y: nodeName.value.offsetHeight + 40 },
             attrs: {
                 text: {
-                    text: 'Success',
+                    text: 'Successful',
                     fontSize: 12,
                 },
             },
@@ -100,7 +100,7 @@ const addBranches = () => {
             args: { x: nodeName.value.offsetWidth - 15, y: nodeName.value.offsetHeight + 56 },
             attrs: {
                 text: {
-                    text: 'Fail',
+                    text: 'Failed',
                     fontSize: 12,
                 },
             },
