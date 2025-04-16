@@ -19,7 +19,7 @@ name = "dialogflowai"
 # lzma-sys = { version = "*", features = ["static"] }
 # End
 # artful = "0.1.1"
-anyhow = "1.0.97"
+anyhow = "1.0.98"
 axum = {version = "0.8.3", features = ["query", "tokio", "macros", "multipart"]}
 bigdecimal = "0.4.8"
 # bytes = "1.9"
@@ -66,20 +66,20 @@ scraper = "0.23.1"
 time = { version = "0.3.41", features = ["formatting"] }
 tower-http = { version = "0.6.2", features = ["cors", "limit"] }
 # typetag = "0.2"
-tokio = { version = "1.44.1", features = ["fs", "io-util", "macros", "net", "rt", "rt-multi-thread", "signal", "time"] }
+tokio = { version = "1.44.2", features = ["fs", "io-util", "macros", "net", "rt", "rt-multi-thread", "signal", "time"] }
 tokio-stream = "0.1.17"
 # tracing-subscriber = "0.3"
 log = "0.4.27"
 env_logger = "0.11.8"
 lettre = { version = "0.11.15", default-features = false, features = ["builder", "tokio1", "smtp-transport", "tokio1-native-tls", "pool"]}
 unicase = "2.8.1"
-sqlx = { version = "0.8.3", default-features = false, features = ["runtime-tokio", "sqlite", "macros"] }
+sqlx = { version = "0.8.5", default-features = false, features = ["runtime-tokio", "sqlite", "macros"] }
 lopdf = "0.36.0"
 # docx-rs = "0.4.17"
 # lancedb = "0.13.0"
 libsqlite3-sys = { version = "0.30", features = ["bundled"] }
 validator = "0.20"
-zip = "2.6.0"
+zip = "2.6.1"
 quick-xml = "0.37.4"
 # usearch = "2.17"
 # cxx = "1.0"
@@ -103,7 +103,7 @@ openssl = { version = "0.10.72", features = ["vendored"] }
 
 [target.'cfg(target_env = "musl")'.dependencies]
 openssl = { version = "0.10.72", features = ["vendored"] }
-mimalloc = "0.1.45"
+mimalloc = "0.1.46"
 
 [profile.dev]
 debug = 2
