@@ -20,7 +20,7 @@ Cargo.lock
 src/resources/assets/*.gz
 src/resources/assets/assets/*.gz
 flow.db
-dialogflow.exe
+dialogflowai.exe
 TODO.txt
 # index.html
 /data
