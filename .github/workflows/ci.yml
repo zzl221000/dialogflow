@@ -9,7 +9,7 @@ on:
   release:
     types: [published]
 env:
-  CRATE_NAME: dialogflow
+  CRATE_NAME: dialogflowai
   GITHUB_TOKEN: ${{ github.token }}
   RUST_BACKTRACE: 1
 jobs:
