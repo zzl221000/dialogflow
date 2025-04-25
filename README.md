@@ -1,6 +1,6 @@
 [简体中文](./README_zh-CN.md) | English
 
-# Dialog flow chat bot
+# Dialog flow AI
 **only ONE executable file**, you can use it directly, including intent detection, AI management, a visual process editor and a response system.  
 <img src="https://img.shields.io/badge/Latest_version-v1.17.6-blue" /> <img src="https://img.shields.io/badge/MSRV-1.85.0-green" />
 
@@ -16,7 +16,7 @@
 * 🔐 **Safe** 100% open source, all runtime data is saved locally (Using `OpenAI API` may expose some data).
 
 # Give it a try!
-* 🐋 **Docker** We provided an image on Docker Hub at [dialogflowai/demo](https://hub.docker.com/repository/docker/dialogflowai/demo)
+* 🐋 **Docker** We provided an image on Docker Hub at [dialogflowai/dialogflow](https://hub.docker.com/repository/docker/dialogflowai/dialogflow)
 * 💻 **Binary releases**, please check [here](https://github.com/dialogflowai/dialogflow/releases)
 
 > By default application will listen to `127.0.0.1:12715`, you can use `-ip` and `-port` specify new value, e.g.: `dialogflow -ip 0.0.0.0 -port 8888`
