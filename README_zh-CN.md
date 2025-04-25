@@ -2,7 +2,7 @@
 
 欢迎给本项目，或者给[Github上的项目](https://github.com/dialogflowai/dialogflow) ✨**Star**🎇!
 
-# Dialog flow chat bot
+# Dialog flow AI
 **只有一个执行文件** 的AI工具，不用安装任何依赖就可以**直接使用**, 它包含了意图识别，AI模型管理，可视化的流程编辑器，和应答逻辑.  
 <img src="https://img.shields.io/badge/Latest_version-v1.17.6-blue" /> <img src="https://img.shields.io/badge/MSRV-1.85.0-green" />
 
@@ -18,7 +18,7 @@
 * 🔐 **安全** 100% 开源, 所有运行时的数据, 都保存在本地 (使用 `OpenAI API` 可能会暴露一些数据).
 
 # 现在就尝试一下!
-* 🐋 **Docker** 我们提供了一个`Docker`镜像: [dialogflowai/demo](https://hub.docker.com/repository/docker/dialogflowai/demo)
+* 🐋 **Docker** 我们提供了一个`Docker`镜像: [dialogflowai/dialogflow]([https://hub.docker.com/repository/docker/dialogflowai/demo](https://hub.docker.com/r/dialogflowai/dialogflow/))
 * 💻 **可直接执行的发布版本**, 请通过发布页: [点击这里](https://github.com/dialogflowai/dialogflow/releases) , 根据不同的平台下载（支持：Windows、Linux、macOS）
 
 > 默认情况下, 应用会监听: `127.0.0.1:12715`, 你可以使用 `-ip` 参数和 `-port` 参数, 来指定新的监听地址和端口, 例如: `dialogflow -ip 0.0.0.0 -port 8888`
