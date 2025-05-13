@@ -507,7 +507,7 @@ impl RuntimeNode for LlmChatNode {
                     content_type: AnswerContentType::TextPlain,
                 });
             }
-            log::info!("Llm response took {:?}", now.elapsed());
+            log::info!("LLM response took {:?}", now.elapsed());
             // let (s, rev) = std::sync::mpsc::channel::<String>();
             // let robot_id = req.robot_id.clone();
             // let prompt = self.prompt.clone();

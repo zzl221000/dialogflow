@@ -64,10 +64,9 @@ pub(crate) async fn chat(
                     &m,
                     prompt,
                     chat_history,
-                    connect_timeout
-                        .unwrap_or(settings.text_generation_provider.connect_timeout_millis),
-                    read_timeout.unwrap_or(settings.text_generation_provider.read_timeout_millis),
-                    &settings.text_generation_provider.proxy_url,
+                    connect_timeout.unwrap_or(settings.chat_provider.connect_timeout_millis),
+                    read_timeout.unwrap_or(settings.chat_provider.read_timeout_millis),
+                    &settings.chat_provider.proxy_url,
                     result_receiver,
                 )
                 .await?;
@@ -75,15 +74,13 @@ pub(crate) async fn chat(
             }
             ChatProvider::Ollama(m) => {
                 ollama(
-                    &settings.text_generation_provider.api_url,
+                    &settings.chat_provider.api_url,
                     &m,
-                    prompt,
                     chat_history,
-                    connect_timeout
-                        .unwrap_or(settings.text_generation_provider.connect_timeout_millis),
-                    read_timeout.unwrap_or(settings.text_generation_provider.read_timeout_millis),
-                    &settings.text_generation_provider.proxy_url,
-                    settings.text_generation_provider.max_response_token_length,
+                    connect_timeout.unwrap_or(settings.chat_provider.connect_timeout_millis),
+                    read_timeout.unwrap_or(settings.chat_provider.read_timeout_millis),
+                    &settings.chat_provider.proxy_url,
+                    settings.chat_provider.max_response_token_length,
                     result_receiver,
                 )
                 .await?;
@@ -272,7 +269,7 @@ async fn open_ai(
 async fn ollama(
     u: &str,
     m: &str,
-    s: &str,
+    // s: &str,
     chat_history: Option<Vec<Prompt>>,
     connect_timeout_millis: u32,
     read_timeout_millis: u32,
@@ -280,26 +277,12 @@ async fn ollama(
     sample_len: u32,
     result_receiver: ResultReceiver<'_>,
 ) -> Result<()> {
-    // log::info!("s1=|{}|", s);
-    let prompts: Vec<super::completion::Prompt> = serde_json::from_str(s)?;
-    // log::info!("s2=|{}|", s);
-    let mut prompt = String::with_capacity(32);
-    for p in prompts.iter() {
-        if p.role.eq("user") {
-            prompt.push_str(&p.content);
-            break;
-        }
-    }
-    if prompt.is_empty() {
-        return Ok(());
-    }
     let client = crate::external::http::get_client(
         connect_timeout_millis.into(),
         read_timeout_millis.into(),
         proxy_url,
     )?;
     let mut req_body = Map::new();
-    req_body.insert(String::from("prompt"), Value::String(prompt));
     req_body.insert(String::from("model"), Value::String(String::from(m)));
     let stream = match result_receiver {
         ResultReceiver::SseSender(_) => true,
@@ -307,21 +290,22 @@ async fn ollama(
     };
     req_body.insert(String::from("stream"), Value::Bool(stream));
 
-    let mut messages: Vec<Value> = match chat_history {
+    let messages: Vec<Value> = match chat_history {
         Some(h) if !h.is_empty() => {
             let mut d = Vec::with_capacity(h.len() + 1);
             for p in h.into_iter() {
+                if p.content.is_empty() {
+                    continue;
+                }
                 let mut map = Map::new();
-                map.insert(p.role, Value::String(p.content));
+                map.insert("role".into(), Value::String(p.role));
+                map.insert("content".into(), Value::String(p.content));
                 d.push(Value::from(map));
             }
             d
         }
         _ => Vec::with_capacity(1),
     };
-    let mut m = Map::new();
-    m.insert(String::from("user"), Value::String(String::from(s)));
-    messages.push(Value::from(m));
     req_body.insert(String::from("messages"), Value::Array(messages));
 
     let mut num_predict = Map::new();
@@ -352,11 +336,15 @@ async fn ollama(
         }
         ResultReceiver::StrBuf(sb) => {
             let v: Value = serde_json::from_slice(res.bytes().await?.as_ref())?;
-            if let Some(res) = v.get("response") {
-                if res.is_string() {
-                    if let Some(s) = res.as_str() {
-                        log::info!("Ollama returned {}", s);
-                        sb.push_str(s);
+            if let Some(message) = v.get("message") {
+                if message.is_object() {
+                    if let Some(content) = message.get("content") {
+                        if content.is_string() {
+                            if let Some(s) = content.as_str() {
+                                log::info!("Ollama returned {}", s);
+                                sb.push_str(s);
+                            }
+                        }
                     }
                 }
             }
