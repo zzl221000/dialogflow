@@ -1,6 +1,6 @@
 [package]
 name = "dialogflowai"
-version = "1.17.6"
+version = "1.17.7"
 edition = "2024"
 homepage = "https://dialogflowai.github.io/"
 authors = ["dialogflowchatbot <dialogflow@yeah.net>"]
