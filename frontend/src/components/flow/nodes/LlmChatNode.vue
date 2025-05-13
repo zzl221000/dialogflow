@@ -254,7 +254,7 @@ const hideForm = () => {
                 </el-form-item> -->
                 <el-form-item label="" :label-width="formLabelWidth">
                     <el-select v-model="nodeData.exitIntent" v-show="nodeData.nodeExitType == 'exitByIntent'">
-                        <el-option v-for="item in intents" :key="item.id" :label="item.name" :value="item.id" />
+                        <el-option v-for="item in intents" :key="item.id" :label="item.intent_name" :value="item.intent_id" />
                     </el-select>
                     <el-input v-model="nodeData.exitSpecialInputs"
                         v-show="nodeData.nodeExitType == 'exitBySpecialInputs'" />
