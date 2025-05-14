@@ -98,7 +98,7 @@ pub(super) fn gen_text(
         if next_token == eos_token {
             if let Some(t) = tokenizer.decode_rest()? {
                 match result_receiver {
-                    ResultReceiver::SseSender(sender) => {
+                    ResultReceiver::ChannelSender(sender) => {
                         crate::sse_send!(sender, t);
                     }
                     ResultReceiver::StrBuf(sb) => {
@@ -111,7 +111,7 @@ pub(super) fn gen_text(
         }
         if let Some(t) = tokenizer.next_token(next_token)? {
             match result_receiver {
-                ResultReceiver::SseSender(sender) => {
+                ResultReceiver::ChannelSender(sender) => {
                     crate::sse_send!(sender, t);
                 }
                 ResultReceiver::StrBuf(sb) => {

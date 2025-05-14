@@ -193,7 +193,7 @@ async fn huggingface(
         model.insert(String::from(robot_id), r);
     };
     let loaded_model = model.get(robot_id).unwrap();
-    let mut result_receiver = ResultReceiver::SseSender(sender);
+    let mut result_receiver = ResultReceiver::ChannelSender(sender);
     match loaded_model {
         LoadedHuggingFaceModel::Gemma(m) => super::gemma::gen_text(
             &m.0,

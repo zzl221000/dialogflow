@@ -976,7 +976,7 @@ const popupRundryWindow = async () => {
                         style="width: 200px" @keypress="(e) => { if (e.keyCode == 13) dryrun(); }" />
                     <el-button-group>
                         <el-button type="primary" :disabled="dryrunDisabled" @click="dryrun"
-                            :loading="waitingResponse">{{ $t('lang.flow.send')
+                            :loading="waitingResponse">{{ waitingResponse ? 'Sending' : $t('lang.flow.send')
                             }}</el-button>
                         <el-button @click="dryrunClear">{{ $t('lang.flow.reset') }}</el-button>
                     </el-button-group>

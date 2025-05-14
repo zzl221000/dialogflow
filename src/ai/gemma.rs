@@ -97,7 +97,7 @@ pub(super) fn gen_text(
             // std::io::stdout().flush()?;
             // let result_receiver = rr.clone();
             match result_receiver {
-                ResultReceiver::SseSender(sender) => {
+                ResultReceiver::ChannelSender(sender) => {
                     if let Err(e) = sender.try_send(t) {
                         log::warn!(
                             "Sent failed, maybe receiver dropped or queue was full, err: {:?}",
@@ -118,7 +118,7 @@ pub(super) fn gen_text(
     if let Some(rest) = tokenizer.decode_rest()? {
         // print!("{rest}");
         match result_receiver {
-            ResultReceiver::SseSender(sender) => {
+            ResultReceiver::ChannelSender(sender) => {
                 if let Err(e) = sender.try_send(rest) {
                     log::warn!(
                         "Sent failed, maybe receiver dropped or queue was full, err: {:?}",

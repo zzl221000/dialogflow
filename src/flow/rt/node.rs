@@ -7,7 +7,7 @@ use rkyv::{Archive, Deserialize, Serialize, util::AlignedVec};
 
 use super::condition::ConditionData;
 use super::context::Context;
-use super::dto::{AnswerContentType, AnswerData, CollectData, Request, Response};
+use super::dto::{AnswerContentType, AnswerData, CollectData, Request, ResponseData};
 use crate::ai::chat::ResultReceiver;
 use crate::external::http::client as http;
 use crate::flow::rt::collector;
@@ -47,7 +47,7 @@ pub(crate) enum RuntimeNnodeEnum {
 
 #[enum_dispatch(RuntimeNnodeEnum)]
 pub(crate) trait RuntimeNode {
-    fn exec(&mut self, req: &Request, ctx: &mut Context, response: &mut Response) -> bool;
+    fn exec(&mut self, req: &Request, ctx: &mut Context, response: &mut ResponseData) -> bool;
 }
 
 fn replace_vars(text: &str, req: &Request, ctx: &mut Context) -> Result<String> {
@@ -98,7 +98,7 @@ pub(crate) struct TextNode {
 }
 
 impl RuntimeNode for TextNode {
-    fn exec(&mut self, req: &Request, ctx: &mut Context, response: &mut Response) -> bool {
+    fn exec(&mut self, req: &Request, ctx: &mut Context, response: &mut ResponseData) -> bool {
         // log::info!("Into TextNode");
         // let now = std::time::Instant::now();
         match replace_vars(&self.text, &req, ctx) {
@@ -123,7 +123,7 @@ pub(crate) struct GotoMainFlowNode {
 }
 
 impl RuntimeNode for GotoMainFlowNode {
-    fn exec(&mut self, _req: &Request, ctx: &mut Context, _response: &mut Response) -> bool {
+    fn exec(&mut self, _req: &Request, ctx: &mut Context, _response: &mut ResponseData) -> bool {
         // println!("Into GotoMainFlowNode");
         ctx.main_flow_id.clear();
         ctx.main_flow_id.push_str(&self.main_flow_id);
@@ -139,7 +139,7 @@ pub(crate) struct GotoAnotherNode {
 }
 
 impl RuntimeNode for GotoAnotherNode {
-    fn exec(&mut self, _req: &Request, ctx: &mut Context, _response: &mut Response) -> bool {
+    fn exec(&mut self, _req: &Request, ctx: &mut Context, _response: &mut ResponseData) -> bool {
         // println!("Into GotoAnotherNode");
         add_next_node(ctx, &self.next_node_id);
         false
@@ -156,7 +156,7 @@ pub(crate) struct CollectNode {
 }
 
 impl RuntimeNode for CollectNode {
-    fn exec(&mut self, req: &Request, ctx: &mut Context, response: &mut Response) -> bool {
+    fn exec(&mut self, req: &Request, ctx: &mut Context, response: &mut ResponseData) -> bool {
         // println!("Into CollectNode");
         if let Some(r) = collector::collect(&req.user_input, &self.collect_type) {
             // println!("{} {}", &self.var_name, r);
@@ -185,7 +185,7 @@ pub(crate) struct ConditionNode {
 }
 
 impl RuntimeNode for ConditionNode {
-    fn exec(&mut self, req: &Request, ctx: &mut Context, _response: &mut Response) -> bool {
+    fn exec(&mut self, req: &Request, ctx: &mut Context, _response: &mut ResponseData) -> bool {
         // println!("Into ConditionNode");
         let mut r = false;
         for and_conditions in self.conditions.iter() {
@@ -210,7 +210,7 @@ impl RuntimeNode for ConditionNode {
 pub(crate) struct TerminateNode {}
 
 impl RuntimeNode for TerminateNode {
-    fn exec(&mut self, _req: &Request, _ctx: &mut Context, response: &mut Response) -> bool {
+    fn exec(&mut self, _req: &Request, _ctx: &mut Context, response: &mut ResponseData) -> bool {
         // log::info!("Into TerminateNode");
         response.next_action = NextActionType::Terminate;
         true
@@ -228,7 +228,7 @@ pub(crate) struct ExternalHttpCallNode {
 }
 
 impl RuntimeNode for ExternalHttpCallNode {
-    fn exec(&mut self, req: &Request, ctx: &mut Context, _response: &mut Response) -> bool {
+    fn exec(&mut self, req: &Request, ctx: &mut Context, _response: &mut ResponseData) -> bool {
         // println!("Into ExternalHttpCallNode");
         let mut goto_node_id = &self.next_node_id;
         if let Ok(op) =
@@ -361,7 +361,7 @@ impl SendEmailNode {
 }
 
 impl RuntimeNode for SendEmailNode {
-    fn exec(&mut self, req: &Request, ctx: &mut Context, _response: &mut Response) -> bool {
+    fn exec(&mut self, req: &Request, ctx: &mut Context, _response: &mut ResponseData) -> bool {
         // println!("Into SendEmailNode");
         if let Ok(op) = get_settings(&req.robot_id) {
             if let Some(settings) = op {
@@ -408,7 +408,7 @@ pub(crate) struct LlmChatNode {
 }
 
 impl RuntimeNode for LlmChatNode {
-    fn exec(&mut self, req: &Request, ctx: &mut Context, response: &mut Response) -> bool {
+    fn exec(&mut self, req: &Request, ctx: &mut Context, response: &mut ResponseData) -> bool {
         // log::info!("Into LlmChatNode");
         self.cur_run_times = self.cur_run_times + 1;
         match &self.exit_condition {
@@ -453,6 +453,7 @@ impl RuntimeNode for LlmChatNode {
             let prompt = self.prompt.clone();
             let connect_timeout = self.connect_timeout.clone();
             let read_timeout = self.read_timeout.clone();
+            let (s, r) = tokio::sync::mpsc::channel::<String>(1);
             tokio::task::spawn(async move {
                 if let Err(e) = crate::ai::chat::chat(
                     &robot_id,
@@ -460,7 +461,7 @@ impl RuntimeNode for LlmChatNode {
                     None,
                     connect_timeout,
                     read_timeout,
-                    ResultReceiver::SseSender(&s),
+                    ResultReceiver::ChannelSender(&s),
                 )
                 .await
                 {
@@ -606,7 +607,7 @@ impl KnowledgeBaseAnswerNode {
     fn retrieve_doc_answer(&self, req: &Request) -> Option<String> {
         None
     }
-    fn fallback_answer(&self, ctx: &mut Context, response: &mut Response) -> bool {
+    fn fallback_answer(&self, ctx: &mut Context, response: &mut ResponseData) -> bool {
         match &self.no_recall_then {
             KnowledgeBaseAnswerNoRecallThen::GotoAnotherNode => {
                 add_next_node(ctx, &self.next_node_id);
@@ -627,7 +628,7 @@ impl KnowledgeBaseAnswerNode {
 }
 
 impl RuntimeNode for KnowledgeBaseAnswerNode {
-    fn exec(&mut self, req: &Request, ctx: &mut Context, response: &mut Response) -> bool {
+    fn exec(&mut self, req: &Request, ctx: &mut Context, response: &mut ResponseData) -> bool {
         // log::info!("Into LlmChaKnowledgeBaseAnswerNodetNode");
         for answer_source in &self.retrieve_answer_sources {
             let r = match answer_source {

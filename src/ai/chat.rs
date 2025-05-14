@@ -18,7 +18,7 @@ static LOADED_MODELS: LazyLock<Mutex<HashMap<String, LoadedHuggingFaceModel>>> =
 //     LazyLock::new(|| Mutex::new(HashMap::with_capacity(32)));
 
 pub(crate) enum ResultReceiver<'r> {
-    SseSender(&'r Sender<String>),
+    ChannelSender(&'r Sender<String>),
     StrBuf(&'r mut String),
 }
 
@@ -199,7 +199,7 @@ async fn open_ai(
     req_body.insert(String::from("messages"), messages);
 
     let stream = match result_receiver {
-        ResultReceiver::SseSender(_) => true,
+        ResultReceiver::ChannelSender(_) => true,
         ResultReceiver::StrBuf(_) => false,
     };
     req_body.insert(String::from("stream"), Value::Bool(stream));
@@ -211,7 +211,7 @@ async fn open_ai(
         .body(serde_json::to_string(&obj)?);
     let res = req.send().await?;
     match result_receiver {
-        ResultReceiver::SseSender(sender) => {
+        ResultReceiver::ChannelSender(sender) => {
             let mut stream = res.bytes_stream();
             while let Some(item) = stream.next().await {
                 let chunk = item?;
@@ -285,7 +285,7 @@ async fn ollama(
     let mut req_body = Map::new();
     req_body.insert(String::from("model"), Value::String(String::from(m)));
     let stream = match result_receiver {
-        ResultReceiver::SseSender(_) => true,
+        ResultReceiver::ChannelSender(_) => true,
         ResultReceiver::StrBuf(_) => false,
     };
     req_body.insert(String::from("stream"), Value::Bool(stream));
@@ -318,7 +318,7 @@ async fn ollama(
     let req = client.post(u).body(body);
     let res = req.send().await?;
     match result_receiver {
-        ResultReceiver::SseSender(sender) => {
+        ResultReceiver::ChannelSender(sender) => {
             let mut stream = res.bytes_stream();
             while let Some(item) = stream.next().await {
                 let chunk = item?;

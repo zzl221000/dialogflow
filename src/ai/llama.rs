@@ -142,7 +142,7 @@ pub(super) fn gen_text(
             // }
             // log::info!("{}", &t);
             match result_receiver {
-                ResultReceiver::SseSender(sender) => {
+                ResultReceiver::ChannelSender(sender) => {
                     if sender.is_closed() {
                         break;
                     }
@@ -157,7 +157,7 @@ pub(super) fn gen_text(
     }
     if let Some(rest) = tokenizer.decode_rest()? {
         match result_receiver {
-            ResultReceiver::SseSender(sender) => {
+            ResultReceiver::ChannelSender(sender) => {
                 crate::sse_send!(sender, rest);
             }
             ResultReceiver::StrBuf(sb) => {

@@ -49,8 +49,13 @@ pub(crate) struct AnswerData {
     pub(crate) content_type: AnswerContentType,
 }
 
+pub(crate) enum ResponseDataHolder<D> {
+    Normal(D),
+    Chunked(tokio::sync::mpsc::Receiver<D>),
+}
+
 #[derive(Serialize)]
-pub(crate) struct Response {
+pub(crate) struct ResponseData {
     #[serde(rename = "sessionId")]
     pub(crate) session_id: String,
     pub(crate) have_answers: bool,
@@ -65,7 +70,7 @@ pub(crate) struct Response {
     pub(crate) sse_receiver_ticket: String,
 }
 
-impl Response {
+impl ResponseData {
     pub(crate) fn new(req: &Request) -> Self {
         Self {
             session_id: req.session_id.as_ref().unwrap().clone(),

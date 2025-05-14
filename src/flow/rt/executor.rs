@@ -1,12 +1,12 @@
 use super::context::Context;
-use super::dto::{Request, Response};
+use super::dto::{Request, ResponseData};
 use crate::ai::completion::Prompt;
 use crate::flow::rt::dto::UserInputResult;
 use crate::flow::rt::node::RuntimeNode;
 use crate::intent::detector;
 use crate::result::{Error, Result};
 
-pub(in crate::flow::rt) async fn process(req: &mut Request) -> Result<Response> {
+pub(in crate::flow::rt) async fn process(req: &mut Request) -> Result<ResponseData> {
     // log::info!("user input: {}", &req.user_input);
     // let now = std::time::Instant::now();
     if req.session_id.is_none() || req.session_id.as_ref().unwrap().is_empty() {
@@ -65,9 +65,9 @@ pub(in crate::flow::rt) async fn process(req: &mut Request) -> Result<Response> 
     r
 }
 
-pub(in crate::flow::rt) fn exec(req: &Request, ctx: &mut Context) -> Result<Response> {
+pub(in crate::flow::rt) fn exec(req: &Request, ctx: &mut Context) -> Result<ResponseData> {
     // let now = std::time::Instant::now();
-    let mut response = Response::new(req);
+    let mut response = ResponseData::new(req);
     for _i in 0..100 {
         // let now = std::time::Instant::now();
         if let Some(mut n) = ctx.pop_node() {
@@ -82,7 +82,10 @@ pub(in crate::flow::rt) fn exec(req: &Request, ctx: &mut Context) -> Result<Resp
             return Ok(response);
         }
     }
-    Err(Error::ErrorWithMessage(String::from(
-        "执行次数太多，请检查流程配置是否正确。",
-    )))
+    let m = if *crate::web::server::IS_EN {
+        "Too many executions, please check if the process configuration is correct."
+    } else {
+        "执行次数太多，请检查流程配置是否正确。"
+    };
+    Err(Error::ErrorWithMessage(String::from(m)))
 }
