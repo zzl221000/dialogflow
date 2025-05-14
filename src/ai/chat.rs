@@ -9,6 +9,7 @@ use tokio::sync::mpsc::Sender;
 
 use super::completion::Prompt;
 use crate::ai::huggingface::{HuggingFaceModel, LoadedHuggingFaceModel};
+use crate::flow::rt::dto::ResponseData;
 use crate::man::settings;
 use crate::result::{Error, Result};
 
@@ -17,8 +18,8 @@ static LOADED_MODELS: LazyLock<Mutex<HashMap<String, LoadedHuggingFaceModel>>> =
 // static HTTP_CLIENTS: LazyLock<Mutex<HashMap<String, LoadedHuggingFaceModel>>> =
 //     LazyLock::new(|| Mutex::new(HashMap::with_capacity(32)));
 
-pub(crate) enum ResultReceiver<'r> {
-    ChannelSender(&'r Sender<String>),
+pub(crate) enum ResultReceiver<'r, D: serde::Serialize> {
+    ChannelSender(&'r Sender<D>),
     StrBuf(&'r mut String),
 }
 
@@ -43,7 +44,7 @@ pub(crate) async fn chat(
     chat_history: Option<Vec<Prompt>>,
     connect_timeout: Option<u32>,
     read_timeout: Option<u32>,
-    result_receiver: ResultReceiver<'_>,
+    result_receiver: ResultReceiver<'_, ResponseData>,
 ) -> Result<()> {
     if let Some(settings) = settings::get_settings(robot_id)? {
         // log::info!("{:?}", &settings.chat_provider.provider);
@@ -100,7 +101,7 @@ fn huggingface(
     prompt: &str,
     chat_history: Option<Vec<Prompt>>,
     sample_len: usize,
-    mut result_receiver: ResultReceiver<'_>,
+    mut result_receiver: ResultReceiver<'_, ResponseData>,
 ) -> Result<()> {
     let info = m.get_info();
     // log::info!("model_type={:?}", &info.model_type);
@@ -114,43 +115,43 @@ fn huggingface(
         model.insert(String::from(robot_id), r);
     };
     let loaded_model = model.get(robot_id).unwrap();
-    match loaded_model {
-        LoadedHuggingFaceModel::Gemma(m) => super::gemma::gen_text(
-            &m.0,
-            &m.1,
-            &m.2,
-            prompt,
-            sample_len,
-            Some(0.5),
-            &mut result_receiver,
-        ),
-        LoadedHuggingFaceModel::Llama(m) => super::llama::gen_text(
-            &m.0,
-            &m.1,
-            &m.2,
-            &m.3,
-            &m.4,
-            &new_prompt,
-            sample_len,
-            Some(25),
-            Some(0.5),
-            &mut result_receiver,
-        ),
-        LoadedHuggingFaceModel::Phi3(m) => super::phi3::gen_text(
-            &m.0,
-            &m.1,
-            &m.2,
-            prompt,
-            sample_len,
-            Some(0.5),
-            &mut result_receiver,
-        ),
-        LoadedHuggingFaceModel::Bert(_m) => Err(Error::ErrorWithMessage(format!(
-            "Unsuported model type {:?}.",
-            &info.model_type
-        ))),
-    }
-    // Ok(())
+    // match loaded_model {
+    //     LoadedHuggingFaceModel::Gemma(m) => super::gemma::gen_text(
+    //         &m.0,
+    //         &m.1,
+    //         &m.2,
+    //         prompt,
+    //         sample_len,
+    //         Some(0.5),
+    //         &mut result_receiver,
+    //     ),
+    //     LoadedHuggingFaceModel::Llama(m) => super::llama::gen_text(
+    //         &m.0,
+    //         &m.1,
+    //         &m.2,
+    //         &m.3,
+    //         &m.4,
+    //         &new_prompt,
+    //         sample_len,
+    //         Some(25),
+    //         Some(0.5),
+    //         &mut result_receiver,
+    //     ),
+    //     LoadedHuggingFaceModel::Phi3(m) => super::phi3::gen_text(
+    //         &m.0,
+    //         &m.1,
+    //         &m.2,
+    //         prompt,
+    //         sample_len,
+    //         Some(0.5),
+    //         &mut result_receiver,
+    //     ),
+    //     LoadedHuggingFaceModel::Bert(_m) => Err(Error::ErrorWithMessage(format!(
+    //         "Unsuported model type {:?}.",
+    //         &info.model_type
+    //     ))),
+    // }
+    Ok(())
 }
 
 async fn open_ai(
@@ -160,7 +161,7 @@ async fn open_ai(
     connect_timeout_millis: u32,
     read_timeout_millis: u32,
     proxy_url: &str,
-    result_receiver: ResultReceiver<'_>,
+    result_receiver: ResultReceiver<'_, ResponseData>,
 ) -> Result<()> {
     // let client = HTTP_CLIENTS.lock()?.entry(String::from("value")).or_insert(crate::external::http::get_client(connect_timeout_millis.into(), read_timeout_millis.into(), proxy_url)?);
     let client = crate::external::http::get_client(
@@ -227,7 +228,7 @@ async fn open_ai(
                                                 if let Some(s) = content.as_str() {
                                                     let m = String::from(s);
                                                     log::info!("OpenAI push {}", &m);
-                                                    crate::sse_send!(sender, m);
+                                                    // crate::sse_send!(sender, m);
                                                 }
                                             }
                                         }
@@ -275,7 +276,7 @@ async fn ollama(
     read_timeout_millis: u32,
     proxy_url: &str,
     sample_len: u32,
-    result_receiver: ResultReceiver<'_>,
+    result_receiver: ResultReceiver<'_, ResponseData>,
 ) -> Result<()> {
     let client = crate::external::http::get_client(
         connect_timeout_millis.into(),
@@ -328,7 +329,7 @@ async fn ollama(
                         if let Some(s) = res.as_str() {
                             let m = String::from(s);
                             log::info!("Ollama push {}", &m);
-                            crate::sse_send!(sender, m);
+                            crate::sse_send!(sender, ResponseData::new_with_plain_text_answer(m));
                         }
                     }
                 }

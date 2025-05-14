@@ -1,12 +1,17 @@
 use super::context::Context;
-use super::dto::{Request, ResponseData};
+use super::dto::{Request, ResponseData, ResponseSenderWrapper};
 use crate::ai::completion::Prompt;
 use crate::flow::rt::dto::UserInputResult;
 use crate::flow::rt::node::RuntimeNode;
 use crate::intent::detector;
 use crate::result::{Error, Result};
 
-pub(in crate::flow::rt) async fn process(req: &mut Request) -> Result<ResponseData> {
+pub(in crate::flow::rt) async fn process(
+    req: &mut Request,
+) -> Result<(
+    ResponseData,
+    Option<tokio::sync::mpsc::Receiver<ResponseData>>,
+)> {
     // log::info!("user input: {}", &req.user_input);
     // let now = std::time::Instant::now();
     if req.session_id.is_none() || req.session_id.as_ref().unwrap().is_empty() {
@@ -48,7 +53,7 @@ pub(in crate::flow::rt) async fn process(req: &mut Request) -> Result<ResponseDa
     });
     let r = exec(req, &mut ctx);
     if r.is_ok() {
-        let res = r.as_ref().unwrap();
+        let (res, receiver) = r.as_ref().unwrap();
         if !res.answers.is_empty() {
             for a in res.answers.iter() {
                 ctx.chat_history.push(Prompt {
@@ -65,21 +70,28 @@ pub(in crate::flow::rt) async fn process(req: &mut Request) -> Result<ResponseDa
     r
 }
 
-pub(in crate::flow::rt) fn exec(req: &Request, ctx: &mut Context) -> Result<ResponseData> {
+pub(in crate::flow::rt) fn exec(
+    req: &Request,
+    ctx: &mut Context,
+) -> Result<(
+    ResponseData,
+    Option<tokio::sync::mpsc::Receiver<ResponseData>>,
+)> {
     // let now = std::time::Instant::now();
     let mut response = ResponseData::new(req);
+    let mut sender_wapper = ResponseSenderWrapper { receiver: None };
     for _i in 0..100 {
         // let now = std::time::Instant::now();
         if let Some(mut n) = ctx.pop_node() {
             // println!("pop node {:?}", now.elapsed());
-            let ret = n.exec(&req, ctx, &mut response);
+            let ret = n.exec(&req, ctx, &mut response, &mut sender_wapper);
             // println!("node exec {:?}", now.elapsed());
             if ret {
                 // log::info!("exec time {:?}", now.elapsed());
-                return Ok(response);
+                return Ok((response, sender_wapper.receiver));
             }
         } else {
-            return Ok(response);
+            return Ok((response, sender_wapper.receiver));
         }
     }
     let m = if *crate::web::server::IS_EN {

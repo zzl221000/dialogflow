@@ -8,7 +8,7 @@ use tokio::sync::mpsc::Sender;
 use super::dto::Request;
 use super::executor;
 use crate::result::Result;
-use crate::web::server::to_res;
+use crate::web::server::to_res2;
 
 static ANSWER_SSE_SESSIONS: LazyLock<Mutex<HashMap<String, Sender<String>>>> =
     LazyLock::new(|| Mutex::new(HashMap::with_capacity(128)));
@@ -17,7 +17,7 @@ pub(crate) async fn answer(Json(mut req): Json<Request>) -> impl IntoResponse {
     let now = std::time::Instant::now();
     let r = executor::process(&mut req).await;
     // println!("exec used time:{:?}", now.elapsed());
-    let res = to_res(r);
+    let res = to_res2(r);
     log::info!("Response used time:{:?}", now.elapsed());
     res
 }

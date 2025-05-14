@@ -33,7 +33,7 @@ pub(super) fn gen_text(
     sample_len: usize,
     top_k: Option<usize>,
     top_p: Option<f64>,
-    result_receiver: &mut ResultReceiver<'_>,
+    result_receiver: &mut ResultReceiver<'_, String>,
 ) -> Result<()> {
     // let device = device()?;
     // let lock = TEXT_GENERATION_MODEL.get_or_init(|| Mutex::new(HashMap::with_capacity(32)));

@@ -49,9 +49,8 @@ pub(crate) struct AnswerData {
     pub(crate) content_type: AnswerContentType,
 }
 
-pub(crate) enum ResponseDataHolder<D> {
-    Normal(D),
-    Chunked(tokio::sync::mpsc::Receiver<D>),
+pub(crate) struct ResponseSenderWrapper {
+    pub(crate) receiver: Option<tokio::sync::mpsc::Receiver<ResponseData>>,
 }
 
 #[derive(Serialize)]
@@ -77,6 +76,22 @@ impl ResponseData {
             have_answers: false,
             answers: Vec::with_capacity(5),
             collect_data: Vec::with_capacity(10),
+            next_action: NextActionType::None,
+            extra_data: ExtraData {
+                external_link: String::new(),
+            },
+            sse_receiver_ticket: String::new(),
+        }
+    }
+    pub(crate) fn new_with_plain_text_answer(a: String) -> Self {
+        Self {
+            session_id: String::new(),
+            have_answers: true,
+            answers: vec![AnswerData {
+                content: a,
+                content_type: AnswerContentType::TextPlain,
+            }],
+            collect_data: Vec::with_capacity(0),
             next_action: NextActionType::None,
             extra_data: ExtraData {
                 external_link: String::new(),

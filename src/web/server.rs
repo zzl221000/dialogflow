@@ -419,6 +419,59 @@ struct ResponseData<D> {
     pub(crate) err: Option<Error>,
 }
 
+pub(crate) fn to_res2<D>(
+    r: Result<(D, Option<tokio::sync::mpsc::Receiver<D>>), Error>,
+) -> axum::response::Response
+where
+    D: serde::Serialize + 'static + std::marker::Send,
+{
+    match r {
+        Ok((d, receiver)) => {
+            let builder = Response::builder().status(200);
+            if receiver.is_none() {
+                let res = ResponseData {
+                    status: StatusCode::OK.as_u16(),
+                    data: Some(d),
+                    err: None,
+                };
+                let body = axum::body::Body::from(serde_json::to_string(&res).unwrap());
+                builder
+                    .header(header::CONTENT_TYPE, "application/json")
+                    .body(body)
+                    .unwrap()
+            } else {
+                let s = tokio_stream::wrappers::ReceiverStream::new(receiver.unwrap());
+                let body = axum::body::Body::from_stream(s.map(|d| {
+                    let res = ResponseData {
+                        status: StatusCode::OK.as_u16(),
+                        data: Some(d),
+                        err: None,
+                    };
+                    let body = serde_json::to_string(&res).unwrap();
+                    Ok::<_, std::convert::Infallible>(body)
+                }));
+                builder
+                    .header(header::TRANSFER_ENCODING, "chunked")
+                    .body(body)
+                    .unwrap()
+            }
+        }
+        Err(e) => {
+            let builder = Response::builder().status(200);
+            let res: ResponseData<D> = ResponseData {
+                status: StatusCode::INTERNAL_SERVER_ERROR.as_u16(),
+                data: None,
+                err: Some(e),
+            };
+            let body = axum::body::Body::from(serde_json::to_string(&res).unwrap());
+            builder
+                .header(header::CONTENT_TYPE, "application/json")
+                .body(body)
+                .unwrap()
+        }
+    }
+}
+
 pub(crate) enum ResponseDataHolder<D> {
     Normal(D),
     Chunked(tokio::sync::mpsc::UnboundedReceiver<D>),
@@ -457,7 +510,6 @@ where
                 .header(header::TRANSFER_ENCODING, "chunked")
                 .body(body)
                 .unwrap()
-            // header_map.insert(header::TRANSFER_ENCODING, "chunked".parse().unwrap());
         }
     }
 }
