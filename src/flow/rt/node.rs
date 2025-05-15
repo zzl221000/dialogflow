@@ -452,14 +452,14 @@ pub(crate) enum LlmChatAnswerTimeoutThen {
 #[derive(Archive, Clone, Deserialize, Serialize)]
 #[rkyv(compare(PartialEq))]
 pub(crate) struct LlmChatNode {
-    pub(super) prompt: String,
+    // pub(super) prompt: String,
     pub(super) context_len: u8,
     pub(super) cur_run_times: u8,
     pub(super) exit_condition: LlmChatNodeExitCondition,
     pub(super) answer_timeout_then: LlmChatAnswerTimeoutThen,
-    pub(super) streaming: bool,
     pub(crate) connect_timeout: Option<u32>,
     pub(crate) read_timeout: Option<u32>,
+    pub(crate) response_streaming: bool,
     pub(super) next_node_id: String,
 }
 
@@ -498,7 +498,13 @@ impl RuntimeNode for LlmChatNode {
         let r = RuntimeNnodeEnum::LlmChatNode(self.clone());
         let bytes = rkyv::to_bytes::<rkyv::rancor::Error>(&r).unwrap();
         ctx.node = Some(bytes.into_vec());
-        if self.streaming {
+        // log::info!("self.response_streaming {}", self.response_streaming);
+        let chat_history = if ctx.chat_history.is_empty() {
+            None
+        } else {
+            Some(ctx.chat_history.clone())
+        };
+        if self.response_streaming {
             // let r = super::facade::get_sender(req.session_id.as_ref().unwrap());
             // if r.is_err() {
             //     add_next_node(ctx, &self.next_node_id);
@@ -512,7 +518,6 @@ impl RuntimeNode for LlmChatNode {
             // let s = s_op.unwrap();
             // let ticket = String::new();
             let robot_id = req.robot_id.clone();
-            let prompt = self.prompt.clone();
             let connect_timeout = self.connect_timeout.clone();
             let read_timeout = self.read_timeout.clone();
             // let (s, r) = tokio::sync::mpsc::channel::<String>(1);
@@ -521,8 +526,7 @@ impl RuntimeNode for LlmChatNode {
             tokio::task::spawn(async move {
                 if let Err(e) = crate::ai::chat::chat(
                     &robot_id,
-                    &prompt,
-                    None,
+                    chat_history,
                     connect_timeout,
                     read_timeout,
                     ResultReceiver::ChannelSender(&s),
@@ -532,21 +536,15 @@ impl RuntimeNode for LlmChatNode {
                     log::info!("LlmChatNode response failed, err: {:?}", &e);
                 }
             });
-            false
+            true
         } else {
             let now = std::time::Instant::now();
             let mut s = String::with_capacity(1024);
             if let Err(e) = tokio::task::block_in_place(|| {
                 // log::info!("prompt |{}|", &self.prompt);
-                let chat_history = if ctx.chat_history.is_empty() {
-                    None
-                } else {
-                    Some(ctx.chat_history.clone())
-                };
                 tokio::task::block_in_place(|| {
                     tokio::runtime::Handle::current().block_on(crate::ai::chat::chat(
                         &req.robot_id,
-                        &self.prompt,
                         chat_history,
                         self.connect_timeout,
                         self.read_timeout,

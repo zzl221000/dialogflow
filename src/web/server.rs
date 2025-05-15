@@ -440,6 +440,7 @@ where
                     .body(body)
                     .unwrap()
             } else {
+                // log::info!("Response is chunked");
                 let s = tokio_stream::wrappers::ReceiverStream::new(receiver.unwrap());
                 let body = axum::body::Body::from_stream(s.map(|d| {
                     let res = ResponseData {
@@ -452,6 +453,7 @@ where
                 }));
                 builder
                     .header(header::TRANSFER_ENCODING, "chunked")
+                    .header(header::CONTENT_TYPE, "application/x-ndjson")
                     .body(body)
                     .unwrap()
             }

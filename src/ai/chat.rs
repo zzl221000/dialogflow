@@ -40,7 +40,7 @@ pub(crate) fn replace_model_cache(robot_id: &str, m: &HuggingFaceModel) -> Resul
 
 pub(crate) async fn chat(
     robot_id: &str,
-    prompt: &str,
+    // prompt: &str,
     chat_history: Option<Vec<Prompt>>,
     connect_timeout: Option<u32>,
     read_timeout: Option<u32>,
@@ -53,7 +53,6 @@ pub(crate) async fn chat(
                 huggingface(
                     robot_id,
                     &m,
-                    prompt,
                     chat_history,
                     settings.chat_provider.max_response_token_length as usize,
                     result_receiver,
@@ -63,7 +62,6 @@ pub(crate) async fn chat(
             ChatProvider::OpenAI(m) => {
                 open_ai(
                     &m,
-                    prompt,
                     chat_history,
                     connect_timeout.unwrap_or(settings.chat_provider.connect_timeout_millis),
                     read_timeout.unwrap_or(settings.chat_provider.read_timeout_millis),
@@ -98,14 +96,13 @@ pub(crate) async fn chat(
 fn huggingface(
     robot_id: &str,
     m: &HuggingFaceModel,
-    prompt: &str,
     chat_history: Option<Vec<Prompt>>,
     sample_len: usize,
     mut result_receiver: ResultReceiver<'_, ResponseData>,
 ) -> Result<()> {
     let info = m.get_info();
     // log::info!("model_type={:?}", &info.model_type);
-    let new_prompt = info.convert_prompt(prompt, chat_history)?;
+    // let new_prompt = info.convert_prompt(prompt, chat_history)?;
     let mut model = LOADED_MODELS.lock().unwrap_or_else(|e| {
         log::warn!("{:#?}", &e);
         e.into_inner()
@@ -156,7 +153,6 @@ fn huggingface(
 
 async fn open_ai(
     m: &str,
-    s: &str,
     chat_history: Option<Vec<Prompt>>,
     connect_timeout_millis: u32,
     read_timeout_millis: u32,
@@ -194,7 +190,7 @@ async fn open_ai(
     messages[0] = Value::Object(sys_message);
     let mut user_message = Map::new();
     user_message.insert(String::from("role"), Value::from("user"));
-    user_message.insert(String::from("content"), Value::from(s));
+    // user_message.insert(String::from("content"), Value::from(s));
     messages.push(Value::Object(user_message));
     let messages = Value::Array(messages);
     req_body.insert(String::from("messages"), messages);
@@ -315,7 +311,7 @@ async fn ollama(
 
     let obj = Value::Object(req_body);
     let body = serde_json::to_string(&obj)?;
-    // log::info!("Request Ollama body {}", &body);
+    log::info!("Request Ollama body {}", &body);
     let req = client.post(u).body(body);
     let res = req.send().await?;
     match result_receiver {
@@ -324,12 +320,19 @@ async fn ollama(
             while let Some(item) = stream.next().await {
                 let chunk = item?;
                 let v: Value = serde_json::from_slice(chunk.as_ref())?;
-                if let Some(res) = v.get("response") {
-                    if res.is_string() {
-                        if let Some(s) = res.as_str() {
-                            let m = String::from(s);
-                            log::info!("Ollama push {}", &m);
-                            crate::sse_send!(sender, ResponseData::new_with_plain_text_answer(m));
+                if let Some(message) = v.get("message") {
+                    if message.is_object() {
+                        if let Some(content) = message.get("content") {
+                            if content.is_string() {
+                                if let Some(s) = content.as_str() {
+                                    let m = String::from(s);
+                                    log::info!("Ollama push {}", &m);
+                                    crate::sse_send!(
+                                        sender,
+                                        ResponseData::new_with_plain_text_answer(m)
+                                    );
+                                }
+                            }
                         }
                     }
                 }

@@ -169,14 +169,14 @@ fn convert_node(main_flow_id: &str, node: &mut Node) -> Result<()> {
         }
         Node::LlmChatNode(n) => {
             let node = LlmChatNode {
-                prompt: n.prompt.clone(),
+                // prompt: n.prompt.clone(),
                 context_len: n.context_length,
                 cur_run_times: 0,
                 exit_condition: n.exit_condition.clone(),
                 answer_timeout_then: n.when_timeout_then.clone(),
-                streaming: n.response_streaming,
                 connect_timeout: n.connect_timeout,
                 read_timeout: n.read_timeout,
+                response_streaming: n.response_streaming,
                 next_node_id: n.branches[0].target_node_id.clone(),
             };
             let r = RuntimeNnodeEnum::LlmChatNode(node);
