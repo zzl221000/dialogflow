@@ -102,6 +102,7 @@ fn huggingface(
     let info = m.get_info();
     // log::info!("model_type={:?}", &info.model_type);
     let new_prompt = info.convert_prompt("", chat_history)?;
+    log::info!("Prompt: {}", &new_prompt);
     let mut model = LOADED_MODELS.lock().unwrap_or_else(|e| {
         log::warn!("{:#?}", &e);
         e.into_inner()

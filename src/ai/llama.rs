@@ -57,7 +57,7 @@ pub(super) fn gen_text(
         Ok(t) => t.get_ids().to_vec(),
         Err(e) => return Err(Error::ErrorWithMessage(format!("{}", &e))),
     };
-    // log::info!("tokens len={}",tokens.len());
+    log::info!("tokens len={}", tokens.len());
     let mut tokenizer = super::token_output_stream::TokenOutputStream::new(tokenizer.clone());
     // log::info!("starting the inference loop");
     // log::info!("{prompt}");
@@ -140,7 +140,7 @@ pub(super) fn gen_text(
             //     );
             //     break;
             // }
-            // log::info!("{}", &t);
+            log::info!("Llama {}", &t);
             match result_sender {
                 ResultSender::ChannelSender(sender) => {
                     if sender.is_closed() {

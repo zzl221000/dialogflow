@@ -124,6 +124,9 @@ impl HuggingFaceModelInfo {
                 }
                 if let Some(h) = history {
                     for i in h.iter() {
+                        if i.content.is_empty() {
+                            continue;
+                        }
                         p.push_str("<|");
                         p.push_str(&i.role);
                         p.push_str("|>\n");
@@ -131,9 +134,12 @@ impl HuggingFaceModelInfo {
                         p.push_str("</s>\n");
                     }
                 }
-                p.push_str("<|user|>\n");
-                p.push_str(&user);
-                p.push_str("</s>\n<|assistant|>");
+                if !user.is_empty() {
+                    p.push_str("<|user|>\n");
+                    p.push_str(&user);
+                    p.push_str("</s>\n");
+                }
+                p.push_str("<|assistant|>");
                 // p.push_str("<|begin_of_text|>");
                 // if !system.is_empty() {
                 //     p.push_str("<|start_header_id|>system<|end_header_id|>");
