@@ -58,9 +58,8 @@ export async function chatReq(method, uri, query, form, body) {
     try {
         const response = await fetch(url, options);
         const contentType = response.headers.get('content-type') || '';
-        console.log('contentType:', contentType);
+        // console.log('contentType:', contentType);
 
-        // 判断是否为可流式处理的类型
         const isStream = contentType.includes('text/event-stream') ||
             contentType.includes('application/x-ndjson') ||
             contentType.includes('text/plain');
@@ -79,7 +78,7 @@ export async function chatReq(method, uri, query, form, body) {
                 }
             });
 
-            // 返回 Response 体的流式文本（ReadableStream -> text chunks）
+            // ReadableStream -> text chunks
             const textStream = stream.getReader();
 
             return {

@@ -50,7 +50,7 @@ pub(crate) struct AnswerData {
 }
 
 pub(crate) struct ResponseSenderWrapper {
-    pub(crate) receiver: Option<tokio::sync::mpsc::Receiver<ResponseData>>,
+    pub(crate) receiver: Option<tokio::sync::mpsc::Receiver<String>>,
 }
 
 #[derive(Serialize)]

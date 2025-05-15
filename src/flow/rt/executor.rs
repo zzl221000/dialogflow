@@ -8,10 +8,7 @@ use crate::result::{Error, Result};
 
 pub(in crate::flow::rt) async fn process(
     req: &mut Request,
-) -> Result<(
-    ResponseData,
-    Option<tokio::sync::mpsc::Receiver<ResponseData>>,
-)> {
+) -> Result<(ResponseData, Option<tokio::sync::mpsc::Receiver<String>>)> {
     // log::info!("user input: {}", &req.user_input);
     // let now = std::time::Instant::now();
     if req.session_id.is_none() || req.session_id.as_ref().unwrap().is_empty() {
@@ -73,10 +70,7 @@ pub(in crate::flow::rt) async fn process(
 pub(in crate::flow::rt) fn exec(
     req: &Request,
     ctx: &mut Context,
-) -> Result<(
-    ResponseData,
-    Option<tokio::sync::mpsc::Receiver<ResponseData>>,
-)> {
+) -> Result<(ResponseData, Option<tokio::sync::mpsc::Receiver<String>>)> {
     // let now = std::time::Instant::now();
     let mut response = ResponseData::new(req);
     let mut sender_wapper = ResponseSenderWrapper { receiver: None };

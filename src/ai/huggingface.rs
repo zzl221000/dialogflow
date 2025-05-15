@@ -101,14 +101,16 @@ impl HuggingFaceModelInfo {
         s: &str,
         history: Option<Vec<crate::ai::completion::Prompt>>,
     ) -> Result<String> {
-        let mut prompts: Vec<super::completion::Prompt> = serde_json::from_str(s)?;
         let mut system = String::new();
         let mut user = String::new();
-        for p in prompts.iter_mut() {
-            if p.role.eq("system") {
-                std::mem::swap(&mut system, &mut p.content);
-            } else if p.role.eq("user") {
-                std::mem::swap(&mut user, &mut p.content);
+        if !s.is_empty() && s.starts_with("[") {
+            let mut prompts: Vec<super::completion::Prompt> = serde_json::from_str(s)?;
+            for p in prompts.iter_mut() {
+                if p.role.eq("system") {
+                    std::mem::swap(&mut system, &mut p.content);
+                } else if p.role.eq("user") {
+                    std::mem::swap(&mut user, &mut p.content);
+                }
             }
         }
         match self.model_type {

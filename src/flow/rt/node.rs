@@ -10,7 +10,7 @@ use super::context::Context;
 use super::dto::{
     AnswerContentType, AnswerData, CollectData, Request, ResponseData, ResponseSenderWrapper,
 };
-use crate::ai::chat::ResultReceiver;
+use crate::ai::chat::ResultSender;
 use crate::external::http::client as http;
 use crate::flow::rt::collector;
 use crate::flow::subflow::dto::NextActionType;
@@ -521,7 +521,7 @@ impl RuntimeNode for LlmChatNode {
             let connect_timeout = self.connect_timeout.clone();
             let read_timeout = self.read_timeout.clone();
             // let (s, r) = tokio::sync::mpsc::channel::<String>(1);
-            let (s, r) = tokio::sync::mpsc::channel::<ResponseData>(2);
+            let (s, r) = tokio::sync::mpsc::channel::<String>(2);
             channel_sender.receiver = Some(r);
             tokio::task::spawn(async move {
                 if let Err(e) = crate::ai::chat::chat(
@@ -529,7 +529,7 @@ impl RuntimeNode for LlmChatNode {
                     chat_history,
                     connect_timeout,
                     read_timeout,
-                    ResultReceiver::ChannelSender(&s),
+                    ResultSender::ChannelSender(&s),
                 )
                 .await
                 {
@@ -548,7 +548,7 @@ impl RuntimeNode for LlmChatNode {
                         chat_history,
                         self.connect_timeout,
                         self.read_timeout,
-                        ResultReceiver::StrBuf(&mut s),
+                        ResultSender::StrBuf(&mut s),
                     ))
                 })
             }) {
