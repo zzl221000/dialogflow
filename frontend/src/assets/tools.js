@@ -29,6 +29,73 @@ export function httpReq(method, uri, query, form, body) {
     return fetch(url, options).then(response => response.json()).catch(error => error);
 }
 
+export async function chatReq(method, uri, query, form, body) {
+    const options = {
+        method: method,
+        headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+        },
+    };
+
+    let url = import.meta.env.VITE_REQ_BACKEND_PREFIX + uri;
+    if (query) {
+        const searchParams = new URLSearchParams(query);
+        url += '?' + searchParams.toString();
+    }
+
+    if (form) {
+        const data = new FormData();
+        for (let k of Object.keys(form)) {
+            data.append(k, form[k]);
+        }
+        options.body = data;
+        delete options.headers['Content-Type']; // FormData 不要指定 content-type
+    } else if (body) {
+        options.body = JSON.stringify(body);
+    }
+
+    try {
+        const response = await fetch(url, options);
+        const contentType = response.headers.get('content-type') || '';
+        // console.log('contentType:', contentType);
+
+        const isStream = contentType.includes('text/event-stream') ||
+            contentType.includes('application/x-ndjson') ||
+            contentType.includes('text/plain');
+
+        if (isStream) {
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder('utf-8');
+            const stream = new ReadableStream({
+                async start(controller) {
+                    while (true) {
+                        const { done, value } = await reader.read();
+                        if (done) break;
+                        controller.enqueue(decoder.decode(value, { stream: true }));
+                    }
+                    controller.close();
+                }
+            });
+
+            // ReadableStream -> text chunks
+            const textStream = stream.getReader();
+
+            return {
+                stream: true,
+                reader: textStream, // 可逐步 read() 得到 chunk
+            };
+        } else {
+            // 普通 JSON 请求
+            const data = await response.json();
+            return { stream: false, data };
+        }
+
+    } catch (error) {
+        return { stream: false, error };
+    }
+}
+
 export function genBranchesByNode(node) {
     if (!node || !node.ports || node.ports.length == 0)
         return [];

@@ -49,8 +49,12 @@ pub(crate) struct AnswerData {
     pub(crate) content_type: AnswerContentType,
 }
 
+pub(crate) struct ResponseSenderWrapper {
+    pub(crate) receiver: Option<tokio::sync::mpsc::Receiver<String>>,
+}
+
 #[derive(Serialize)]
-pub(crate) struct Response {
+pub(crate) struct ResponseData {
     #[serde(rename = "sessionId")]
     pub(crate) session_id: String,
     pub(crate) have_answers: bool,
@@ -65,13 +69,29 @@ pub(crate) struct Response {
     pub(crate) sse_receiver_ticket: String,
 }
 
-impl Response {
+impl ResponseData {
     pub(crate) fn new(req: &Request) -> Self {
         Self {
             session_id: req.session_id.as_ref().unwrap().clone(),
             have_answers: false,
             answers: Vec::with_capacity(5),
             collect_data: Vec::with_capacity(10),
+            next_action: NextActionType::None,
+            extra_data: ExtraData {
+                external_link: String::new(),
+            },
+            sse_receiver_ticket: String::new(),
+        }
+    }
+    pub(crate) fn new_with_plain_text_answer(a: String) -> Self {
+        Self {
+            session_id: String::new(),
+            have_answers: true,
+            answers: vec![AnswerData {
+                content: a,
+                content_type: AnswerContentType::TextPlain,
+            }],
+            collect_data: Vec::with_capacity(0),
             next_action: NextActionType::None,
             extra_data: ExtraData {
                 external_link: String::new(),

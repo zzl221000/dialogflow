@@ -230,11 +230,11 @@ const hideForm = () => {
                     {{ modelId }} - {{ modelName }}
                     (<router-link :to="{ name: 'settings', params: { robotId: robotId } }">change</router-link>)
                 </el-form-item>
-                <el-form-item label="Prompt" :label-width="formLabelWidth" prop="promptText" :rules="[
+                <!-- <el-form-item label="Prompt" :label-width="formLabelWidth" prop="promptText" :rules="[
                     { required: true, message: 'Prompt is required' },
                 ]">
                     <el-input v-model="nodeData.promptText" :rows="6" type="textarea" placeholder="" />
-                </el-form-item>
+                </el-form-item> -->
                 <el-form-item label="Context length" :label-width="formLabelWidth">
                     <el-input-number v-model="nodeData.contextLength" :min="0" :max="50" :step="5" />
                     How many chat history records will be added in prompt.
@@ -246,12 +246,6 @@ const hideForm = () => {
                         <el-radio value="exitByMaxChatTimes">Max chat times</el-radio>
                     </el-radio-group>
                 </el-form-item>
-                <!-- <el-form-item label="Response type" :label-width="formLabelWidth">
-                    <el-radio-group v-model="nodeData.responseStreaming">
-                        <el-radio value="enabled">Enabled</el-radio>
-                        <el-radio value="disabled">Disabled</el-radio>
-                    </el-radio-group>
-                </el-form-item> -->
                 <el-form-item label="" :label-width="formLabelWidth">
                     <el-select v-model="nodeData.exitIntent" v-show="nodeData.nodeExitType == 'exitByIntent'">
                         <el-option v-for="item in intents" :key="item.id" :label="item.intent_name" :value="item.intent_id" />
@@ -264,7 +258,7 @@ const hideForm = () => {
                 <el-form-item label="Timeout" :label-width="formLabelWidth">
                     <el-checkbox label="Override timeout of settings" v-model="overrideTimeoutEnabled" />
                     <el-divider direction="vertical" />
-                    Current settings are: [Connect: {{ settings.chatProvider?.connectTimeoutMillis }} millis, Read: {{
+                    Global settings are: [Connect: {{ settings.chatProvider?.connectTimeoutMillis }} millis, Read: {{
                         settings.chatProvider?.readTimeoutMillis }} mills]
                 </el-form-item>
                 <el-form-item label="Connection" :label-width="formLabelWidth">
@@ -291,6 +285,9 @@ const hideForm = () => {
                 <el-form-item label="Alternate text" :label-width="formLabelWidth"
                     v-show="whenTimeoutThen == 'ResponseAlternateText'">
                     <el-input v-model="responseAlternateText" />
+                </el-form-item>
+                <el-form-item label="Streaming" :label-width="formLabelWidth">
+                    <el-checkbox v-model="nodeData.responseStreaming" label="Response streaming" />
                 </el-form-item>
             </el-form>
             <div>

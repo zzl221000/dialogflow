@@ -13,7 +13,7 @@ import LlmChatNode from './nodes/LlmChatNode.vue';
 import { Graph } from '@antv/x6';
 // https://x6.antv.vision/zh/docs/tutorial/advanced/react#%E6%B8%B2%E6%9F%93-vue-%E8%8A%82%E7%82%B9
 import { register, getTeleport } from "@antv/x6-vue-shape";
-import { atob, httpReq } from '../../assets/tools.js'
+import { atob, chatReq , httpReq } from '../../assets/tools.js'
 // import { ElNotification, ElMessage, ElMessageBox } from 'element-plus';
 import { useI18n } from 'vue-i18n'
 import EpDelete from '~icons/ep/delete'
@@ -659,13 +659,18 @@ function newSessionId() {
     const d = Date.now().toString();
     return d + Math.random().toString(16);
 }
-function addChat(t, c, aT) {
+function addChat(t, c, aT, idx) {
+    if (idx && idx > -1) {
+        chatRecords.value[idx].text += t;
+        return idx;
+    }
     chatRecords.value.push({
         id: 'chat-' + Math.random().toString(16),
         text: t,
         cssClass: c,
         answerType: aT,
     });
+    return chatRecords.value.length - 1;
 }
 async function dryrun() {
     if (chatRecords.value.length > 0 && !userAsk.value)
@@ -684,22 +689,40 @@ async function dryrun() {
         importVariables: [],
         // userInputIntent: '',
     };
-    const r = await httpReq('POST', 'flow/answer', null, null, req);
-    // console.log(r);
+    const res = await chatReq('POST', 'flow/answer', null, null, req);
+    if (res.stream) {
+        let { value, done } = await res.reader.read();
+        let idx = -1;
+        while (!done) {
+            // console.log('chunk:', value);
+            console.log('idx:', idx);
+            idx = showAnswers(JSON.parse(value), idx);
+            ({ value, done } = await res.reader.read());
+        }
+    } else {
+        showAnswers(res.data, -1);
+    }
+    waitingResponse.value = false;
+    dryrunInput.value.focus();
+}
+function showAnswers(r, idx) {
+    console.log(r);
     if (r.status == 200) {
         const data = r.data;
         const answers = data.answers;
+        let newIdx = -1;
         for (let i = 0; i < answers.length; i++)
-            addChat(answers[i].content, 'responseText', answers[i].contentType);
+            newIdx = addChat(answers[i].content, 'responseText', answers[i].contentType, idx);
         userAsk.value = '';
         if (data.nextAction == 'Terminate') {
-            addChat(t('lang.flow.guideReset'), 'terminateText', 'TextPlain');
+            addChat(t('lang.flow.guideReset'), 'terminateText', 'TextPlain', idx);
             dryrunDisabled.value = true;
         }
         nextTick(() => {
             // console.log(dryrunChatRecords.value.clientHeight);
             chatScrollbarRef.value.setScrollTop(dryrunChatRecords.value.clientHeight);
         })
+        return newIdx;
     } else {
         ElNotification({
             title: t('lang.common.errTip'),
@@ -707,8 +730,7 @@ async function dryrun() {
             type: 'error',
         });
     }
-    waitingResponse.value = false;
-    dryrunInput.value.focus();
+    return null;
 }
 async function dryrunClear() {
     chatRecords.value.splice(0, chatRecords.value.length);
@@ -976,7 +998,7 @@ const popupRundryWindow = async () => {
                         style="width: 200px" @keypress="(e) => { if (e.keyCode == 13) dryrun(); }" />
                     <el-button-group>
                         <el-button type="primary" :disabled="dryrunDisabled" @click="dryrun"
-                            :loading="waitingResponse">{{ $t('lang.flow.send')
+                            :loading="waitingResponse">{{ waitingResponse ? 'Sending' : $t('lang.flow.send')
                             }}</el-button>
                         <el-button @click="dryrunClear">{{ $t('lang.flow.reset') }}</el-button>
                     </el-button-group>

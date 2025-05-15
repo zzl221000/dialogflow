@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value};
 use tokio::sync::mpsc::Sender;
 
-use super::chat::ResultReceiver;
+use super::chat::ResultSender;
 use crate::ai::huggingface::{HuggingFaceModel, LoadedHuggingFaceModel};
 use crate::man::settings;
 use crate::result::{Error, Result};
@@ -193,7 +193,7 @@ async fn huggingface(
         model.insert(String::from(robot_id), r);
     };
     let loaded_model = model.get(robot_id).unwrap();
-    let mut result_receiver = ResultReceiver::SseSender(sender);
+    let mut result_sender = ResultSender::ChannelSender(sender);
     match loaded_model {
         LoadedHuggingFaceModel::Gemma(m) => super::gemma::gen_text(
             &m.0,
@@ -202,7 +202,7 @@ async fn huggingface(
             prompt,
             sample_len,
             Some(0.5),
-            &mut result_receiver,
+            &mut result_sender,
         ),
         LoadedHuggingFaceModel::Llama(m) => super::llama::gen_text(
             &m.0,
@@ -214,7 +214,7 @@ async fn huggingface(
             sample_len,
             Some(25),
             Some(0.5),
-            &mut result_receiver,
+            &mut result_sender,
         ),
         LoadedHuggingFaceModel::Phi3(m) => super::phi3::gen_text(
             &m.0,
@@ -223,7 +223,7 @@ async fn huggingface(
             prompt,
             sample_len,
             Some(0.5),
-            &mut result_receiver,
+            &mut result_sender,
         ),
         LoadedHuggingFaceModel::Bert(_m) => Err(Error::ErrorWithMessage(format!(
             "Unsuported model type {:?}.",

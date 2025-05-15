@@ -8,6 +8,7 @@ use axum::http::{HeaderMap, HeaderValue, Method, StatusCode, Uri, header};
 use axum::response::{IntoResponse, Response};
 use axum::routing::{get, post};
 use colored::Colorize;
+use futures::StreamExt;
 use serde::{Deserialize, Serialize};
 use tower_http::cors::{AllowOrigin, CorsLayer};
 use tower_http::limit::RequestBodyLimitLayer;
@@ -416,6 +417,104 @@ struct ResponseData<D> {
     pub(crate) status: u16,
     pub(crate) data: Option<D>,
     pub(crate) err: Option<Error>,
+}
+
+pub(crate) fn to_res2<D>(
+    r: Result<(D, Option<tokio::sync::mpsc::Receiver<String>>), Error>,
+) -> axum::response::Response
+where
+    D: serde::Serialize + 'static + std::marker::Send,
+{
+    match r {
+        Ok((d, receiver)) => {
+            let builder = Response::builder().status(200);
+            if receiver.is_none() {
+                let res = ResponseData {
+                    status: StatusCode::OK.as_u16(),
+                    data: Some(d),
+                    err: None,
+                };
+                let body = axum::body::Body::from(serde_json::to_string(&res).unwrap());
+                builder
+                    .header(header::CONTENT_TYPE, "application/json")
+                    .body(body)
+                    .unwrap()
+            } else {
+                // log::info!("Response is chunked");
+                let s = tokio_stream::wrappers::ReceiverStream::new(receiver.unwrap());
+                let body = axum::body::Body::from_stream(s.map(|d| {
+                    let r = crate::flow::rt::dto::ResponseData::new_with_plain_text_answer(d);
+                    let res = ResponseData {
+                        status: StatusCode::OK.as_u16(),
+                        data: Some(r),
+                        err: None,
+                    };
+                    let body = serde_json::to_string(&res).unwrap();
+                    Ok::<_, std::convert::Infallible>(body)
+                }));
+                builder
+                    .header(header::TRANSFER_ENCODING, "chunked")
+                    .header(header::CONTENT_TYPE, "application/x-ndjson")
+                    .body(body)
+                    .unwrap()
+            }
+        }
+        Err(e) => {
+            let builder = Response::builder().status(200);
+            let res: ResponseData<D> = ResponseData {
+                status: StatusCode::INTERNAL_SERVER_ERROR.as_u16(),
+                data: None,
+                err: Some(e),
+            };
+            let body = axum::body::Body::from(serde_json::to_string(&res).unwrap());
+            builder
+                .header(header::CONTENT_TYPE, "application/json")
+                .body(body)
+                .unwrap()
+        }
+    }
+}
+
+pub(crate) enum ResponseDataHolder<D> {
+    Normal(D),
+    Chunked(tokio::sync::mpsc::UnboundedReceiver<D>),
+}
+
+pub(crate) fn t<D>(d: ResponseDataHolder<D>) -> axum::response::Response
+where
+    D: serde::Serialize + 'static + std::marker::Send,
+{
+    let builder = Response::builder().status(200);
+    match d {
+        ResponseDataHolder::Normal(d) => {
+            let res = ResponseData {
+                status: StatusCode::OK.as_u16(),
+                data: Some(d),
+                err: None,
+            };
+            let body = axum::body::Body::from(serde_json::to_string(&res).unwrap());
+            builder
+                .header(header::CONTENT_TYPE, "application/json")
+                .body(body)
+                .unwrap()
+        }
+        ResponseDataHolder::Chunked(r) => {
+            let s = tokio_stream::wrappers::UnboundedReceiverStream::new(r);
+            let body = axum::body::Body::from_stream(s.map(|d| {
+                let res = ResponseData {
+                    status: StatusCode::OK.as_u16(),
+                    data: Some(d),
+                    err: None,
+                };
+                let body = serde_json::to_string(&res).unwrap();
+                Ok::<_, std::convert::Infallible>(body)
+            }));
+            builder
+                .header(header::TRANSFER_ENCODING, "chunked")
+                .body(body)
+                .unwrap()
+        }
+    }
 }
 
 pub(crate) fn to_res<D>(r: Result<D, Error>) -> impl IntoResponse
