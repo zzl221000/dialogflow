@@ -343,20 +343,41 @@ const smtpTest = async () => {
 }
 
 const ollamaModels = [
+    { label: 'Meta Llama 3.3 70b', value: 'llama3.3:70b' },
     { label: 'Meta Llama 3.1 8b', value: 'llama3.1:8b' },
     { label: 'Meta Llama 3.1 70b', value: 'llama3.1:70b' },
     { label: 'Meta Llama 3 8b', value: 'llama3:8b' },
     { label: 'Meta Llama 3 70b', value: 'llama3:70b' },
+    { label: 'DeepSeek-R1 1.5b', value: 'deepseek-r1:1.5b' },
+    { label: 'DeepSeek-R1 7b', value: 'deepseek-r1:7b' },
+    { label: 'DeepSeek-R1 8b', value: 'deepseek-r1:8b' },
+    { label: 'DeepSeek-R1 14b', value: 'deepseek-r1:14b' },
+    { label: 'DeepSeek-R1 32b', value: 'deepseek-r1:32b' },
+    { label: 'DeepSeek-R1 70b', value: 'deepseek-r1:70b' },
+    { label: 'DeepSeek-R1 671b', value: 'deepseek-r1:671b' },
     { label: 'Phi-3 3.8b', value: 'phi3:3.8b' },
     { label: 'Phi-3 14b', value: 'phi3:14b' },
     { label: 'Phi-3 instruct', value: 'phi3:instruct' },
-    { label: 'Gemma2 9b', value: 'gemma2:9b' },
-    { label: 'Gemma2 27b', value: 'gemma2:27b' },
+    { label: 'Gemma 3 1b', value: 'gemma3:1b' },
+    { label: 'Gemma 3 4b', value: 'gemma3:4b' },
+    { label: 'Gemma 3 12b', value: 'gemma3:12b' },
+    { label: 'Gemma 3 27b', value: 'gemma3:27b' },
+    { label: 'Gemma 2 9b', value: 'gemma2:9b' },
+    { label: 'Gemma 2 27b', value: 'gemma2:27b' },
     { label: 'WizardLM-2 7b', value: 'wizardlm2:7b' },
     { label: 'WizardLM-2 8x22b', value: 'wizardlm2:8x22b' },
+    { label: 'Mistral Small 3.1 24b', value: 'mistral-small3.1:24b' },
     { label: 'Mistral 7b', value: 'mistral:7b' },
     { label: 'Mixtral 8x7b', value: 'mixtral:8x7b' },
     { label: 'Mixtral 8x22b', value: 'mixtral:8x22b' },
+    { label: 'Qwen 3 0.6b', value: 'qwen3:0.6b' },
+    { label: 'Qwen 3 1.7b', value: 'qwen3:1.7b' },
+    { label: 'Qwen 3 1.7b', value: 'qwen3:4b' },
+    { label: 'Qwen 3 1.7b', value: 'qwen3:8b' },
+    { label: 'Qwen 3 1.7b', value: 'qwen3:14b' },
+    { label: 'Qwen 3 1.7b', value: 'qwen3:30b' },
+    { label: 'Qwen 3 1.7b', value: 'qwen3:32b' },
+    { label: 'Qwen 3 1.7b', value: 'qwen3:235b' },
     { label: 'Qwen 2 1.5b', value: 'qwen2:1.5b' },
     { label: 'Qwen 2 7b', value: 'qwen2:7b' },
     { label: 'Qwen 2 72b', value: 'qwen2:72b' },
@@ -714,7 +735,7 @@ const usedBySentenceEmbeddingBig = [sentenceEmbeddingPic];
         <template #content>
             <span class="text-large font-600 mr-3">{{ $t('lang.settings.title') }}</span>
         </template>
-    </el-page-header> -->
+</el-page-header> -->
     <h1>{{ $t('lang.settings.title') }}</h1>
     <h3>Common settings</h3>
     <el-row>
