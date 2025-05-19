@@ -438,6 +438,7 @@ impl RuntimeNode for SendEmailNode {
 pub(crate) enum LlmChatNodeExitCondition {
     Intent(String),
     SpecialInputs(String),
+    LlmResultContains(String),
     MaxChatTimes(u8),
 }
 
@@ -483,10 +484,12 @@ impl RuntimeNode for LlmChatNode {
             }
             LlmChatNodeExitCondition::SpecialInputs(s) => {
                 if req.user_input.eq(s) {
-                    log::info!("886 {}", &self.next_node_id);
+                    // log::info!("886 {}", &self.next_node_id);
                     add_next_node(ctx, &self.next_node_id);
                     return false;
                 }
+            }
+            LlmChatNodeExitCondition::LlmResultContains(s) => {
             }
             LlmChatNodeExitCondition::MaxChatTimes(t) => {
                 if self.cur_run_times > *t {
