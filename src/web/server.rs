@@ -178,11 +178,7 @@ pub async fn start_app() {
             "你可以使用"
         },
         "-ip".yellow(),
-        if *IS_EN {
-            "and"
-        } else {
-            "和"
-        },
+        if *IS_EN { "and" } else { "和" },
         "-port".yellow(),
         if *IS_EN {
             "to customize the listening IP and port"
