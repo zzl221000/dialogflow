@@ -144,6 +144,7 @@ pub(super) fn gen_text(
             match result_sender {
                 ResultSender::ChannelSender(sender) => {
                     if sender.is_closed() {
+                        log::info!("Sender closed, break");
                         break;
                     }
                     crate::sse_send!(sender, t);

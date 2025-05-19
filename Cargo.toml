@@ -87,6 +87,7 @@ quick-xml = "0.37.5"
 # [target.'cfg(not(target_os = "linux"))'.dependencies]
 sqlite-vec = "0.1.6"
 text-splitter = { version = "0.26.0", default-features = false, features = ["tokenizers"] }
+num_cpus = "1.16.0"
 # sqlite-vec = { path = "/mnt/d/work/sqlite-vec/bindings/rust/" }
 
 [build-dependencies]

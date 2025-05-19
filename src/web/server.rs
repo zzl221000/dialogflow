@@ -156,11 +156,11 @@ pub async fn start_app() {
     let _ = colored::control::set_virtual_terminal(true).unwrap();
 
     log::info!(
-        "  -->  {} {}{}:{}",
+        "-->  {} {}{}:{}",
         if *IS_EN {
-            "Please open a browser and visit"
+            "The server is running, please open a browser and visit"
         } else {
-            "请用浏览器访问"
+            "服务已启动，请用浏览器访问"
         },
         "http://".bright_green(),
         if listening_ip.eq("0.0.0.0") {
@@ -170,11 +170,32 @@ pub async fn start_app() {
         },
         port.to_string().blue()
     );
+    log::info!(
+        "Tip: {} {} {} {} {}",
+        if *IS_EN {
+            "You can use"
+        } else {
+            "你可以使用"
+        },
+        "-ip".yellow(),
+        if *IS_EN {
+            "and"
+        } else {
+            "和"
+        },
+        "-port".yellow(),
+        if *IS_EN {
+            "to customize the listening IP and port"
+        } else {
+            "来自定义监听的IP和端口"
+        },
+    );
+    log::info!("---------------------------------------------");
     log::info!("Current version: {}", VERSION);
     log::info!("Visiting https://dialogflowai.github.io/ for the latest releases");
 
     log::info!(
-        "  -->  Press {} to terminate this application",
+        "-->  Press {} to terminate this application",
         "Ctrl+C".bright_red()
     );
 
