@@ -13,7 +13,7 @@ import LlmChatNode from './nodes/LlmChatNode.vue';
 import { Graph } from '@antv/x6';
 // https://x6.antv.vision/zh/docs/tutorial/advanced/react#%E6%B8%B2%E6%9F%93-vue-%E8%8A%82%E7%82%B9
 import { register, getTeleport } from "@antv/x6-vue-shape";
-import { atob, chatReq , httpReq } from '../../assets/tools.js'
+import { atob, chatReq, httpReq } from '../../assets/tools.js'
 // import { ElNotification, ElMessage, ElMessageBox } from 'element-plus';
 import { useI18n } from 'vue-i18n'
 import EpDelete from '~icons/ep/delete'
@@ -666,7 +666,7 @@ function addChat(t, c, aT, idx) {
     }
     chatRecords.value.push({
         id: 'chat-' + Math.random().toString(16),
-        text: t,
+        text: t.trimStart(),
         cssClass: c,
         answerType: aT,
     });
@@ -675,6 +675,9 @@ function addChat(t, c, aT, idx) {
 async function dryrun() {
     if (chatRecords.value.length > 0 && !userAsk.value)
         return;
+    if (waitingResponse.value)
+        return;
+    // console.log('ANSWER START');
     waitingResponse.value = true;
     if (userAsk.value)
         addChat(userAsk.value, 'userText', 'TextPlan');
@@ -689,6 +692,7 @@ async function dryrun() {
         importVariables: [],
         // userInputIntent: '',
     };
+    userAsk.value = '';
     const res = await chatReq('POST', 'flow/answer', null, null, req);
     if (res.stream) {
         let { value, done } = await res.reader.read();
@@ -702,6 +706,22 @@ async function dryrun() {
     } else {
         showAnswers(res.data, -1);
     }
+    // console.log('ANSWER DONE');
+    // if (res.status == 200) {
+    //     const data = res.data;
+    //     const answers = data.answers;
+    //     let newIdx = -1;
+    //     for (let i = 0; i < answers.length; i++)
+    //         newIdx = addChat(answers[i].content, 'responseText', answers[i].contentType, idx);
+    //     if (data.nextAction == 'Terminate') {
+    //         addChat(t('lang.flow.guideReset'), 'terminateText', 'TextPlain', idx);
+    //         dryrunDisabled.value = true;
+    //     }
+    //     nextTick(() => {
+    //         // console.log(dryrunChatRecords.value.clientHeight);
+    //         chatScrollbarRef.value.setScrollTop(dryrunChatRecords.value.clientHeight);
+    //     })
+    // }
     waitingResponse.value = false;
     dryrunInput.value.focus();
 }
@@ -713,7 +733,6 @@ function showAnswers(r, idx) {
         let newIdx = -1;
         for (let i = 0; i < answers.length; i++)
             newIdx = addChat(answers[i].content, 'responseText', answers[i].contentType, idx);
-        userAsk.value = '';
         if (data.nextAction == 'Terminate') {
             addChat(t('lang.flow.guideReset'), 'terminateText', 'TextPlain', idx);
             dryrunDisabled.value = true;
