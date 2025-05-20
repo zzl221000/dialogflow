@@ -129,9 +129,9 @@ const saveForm = async () => {
         <!-- <el-table-column prop="name" :label="tm('lang.mainflow.table')[0]" width="500" /> -->
         <el-table-column :label="tm('lang.mainflow.table')[0]" width="500">
             <template #default="scope">
-                <el-button text type="primary" size="large" @click="toSubflow(scope.$index, scope.row)">
+                <el-text style="cursor: pointer;" type="primary" size="large" @click="toSubflow(scope.$index, scope.row)">
                     {{ scope.row.name }}
-                </el-button>
+                </el-text>
             </template>
         </el-table-column>
 

@@ -114,7 +114,11 @@ impl HuggingFaceModelInfo {
             }
         }
         match self.model_type {
-            HuggingFaceModelType::Bert => todo!(),
+            HuggingFaceModelType::Bert => {
+                let m = String::from("Bert model doesn't support prompt.");
+                log::warn!("{}", &m);
+                Err(Error::ErrorWithMessage(m))
+            }
             HuggingFaceModelType::Llama => {
                 let mut p = String::with_capacity(s.len());
                 if !system.is_empty() {
