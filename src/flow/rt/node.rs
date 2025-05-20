@@ -464,6 +464,168 @@ pub(crate) struct LlmChatNode {
     pub(super) next_node_id: String,
 }
 
+impl LlmChatNode {
+    fn inner_exec(
+        &mut self,
+        req: &Request,
+        ctx: &mut Context,
+        response: &mut ResponseData,
+        channel_sender: &mut ResponseSenderWrapper,
+    ) -> bool {
+        // log::info!("Into LlmChatNode");
+        self.cur_run_times = self.cur_run_times + 1;
+        let mut check_contains_str: Option<&String> = None;
+        match &self.exit_condition {
+            LlmChatNodeExitCondition::Intent(i) => {
+                if req.user_input_intent.is_some() && req.user_input_intent.as_ref().unwrap().eq(i)
+                {
+                    return false;
+                }
+            }
+            LlmChatNodeExitCondition::SpecialInputs(s) => {
+                if req.user_input.eq(s) {
+                    // log::info!("886 {}", &self.next_node_id);
+                    return false;
+                }
+            }
+            LlmChatNodeExitCondition::LlmResultContains(s) => {
+                check_contains_str = Some(s);
+            }
+            LlmChatNodeExitCondition::MaxChatTimes(t) => {
+                if self.cur_run_times > *t {
+                    return false;
+                }
+            }
+        }
+        // log::info!("self.response_streaming {}", self.response_streaming);
+        let chat_history = if ctx.chat_history.is_empty() {
+            None
+        } else {
+            Some(ctx.chat_history.clone())
+        };
+        if self.response_streaming {
+            // let r = super::facade::get_sender(req.session_id.as_ref().unwrap());
+            // if r.is_err() {
+            //     add_next_node(ctx, &self.next_node_id);
+            //     return false;
+            // }
+            // let s_op = r.unwrap();
+            // if s_op.is_none() {
+            //     add_next_node(ctx, &self.next_node_id);
+            //     return false;
+            // }
+            // let s = s_op.unwrap();
+            // let ticket = String::new();
+            let robot_id = req.robot_id.clone();
+            let connect_timeout = self.connect_timeout.clone();
+            let read_timeout = self.read_timeout.clone();
+            // let (s, r) = tokio::sync::mpsc::channel::<String>(1);
+            let (s, r) = tokio::sync::mpsc::channel::<String>(2);
+            channel_sender.receiver = Some(r);
+            tokio::task::spawn(async move {
+                if let Err(e) = crate::ai::chat::chat(
+                    &robot_id,
+                    chat_history,
+                    connect_timeout,
+                    read_timeout,
+                    ResultSender::ChannelSender(&s),
+                )
+                .await
+                {
+                    log::info!("LlmChatNode response failed, err: {:?}", &e);
+                }
+            });
+            true
+        } else {
+            let now = std::time::Instant::now();
+            let mut s = String::with_capacity(1024);
+            if let Err(e) = tokio::task::block_in_place(|| {
+                // log::info!("prompt |{}|", &self.prompt);
+                tokio::task::block_in_place(|| {
+                    tokio::runtime::Handle::current().block_on(crate::ai::chat::chat(
+                        &req.robot_id,
+                        chat_history,
+                        self.connect_timeout,
+                        self.read_timeout,
+                        ResultSender::StrBuf(&mut s),
+                    ))
+                })
+            }) {
+                log::error!("LlmChatNode response failed, err: {:?}", &e);
+                match &self.answer_timeout_then {
+                    LlmChatAnswerTimeoutThen::GotoAnotherNode => {
+                        return false;
+                    }
+                    LlmChatAnswerTimeoutThen::ResponseAlternateText(t) => s.push_str(t),
+                    LlmChatAnswerTimeoutThen::DoNothing => return false,
+                }
+            } else {
+                log::info!("LLM response |{}|", &s);
+                if !s.is_empty() {
+                    let mut contains_certain_str = false;
+                    if check_contains_str.is_some() {
+                        log::info!(
+                            "check_contains_str |{}|",
+                            check_contains_str.as_ref().unwrap()
+                        );
+                        contains_certain_str = s.contains(check_contains_str.unwrap());
+                        log::info!("contains_certain_str {}", contains_certain_str);
+                    }
+                    response.answers.push(AnswerData {
+                        content: s,
+                        content_type: AnswerContentType::TextPlain,
+                    });
+                    if contains_certain_str {
+                        return false;
+                    }
+                }
+            }
+            log::info!("LLM response took {:?}", now.elapsed());
+            // let (s, rev) = std::sync::mpsc::channel::<String>();
+            // let robot_id = req.robot_id.clone();
+            // let prompt = self.prompt.clone();
+            // tokio::task::spawn(async move {
+            //     let mut r = String::with_capacity(1024);
+            //     if let Err(e) =
+            //         crate::ai::chat::chat(&robot_id, &prompt, ResultReceiver::StrBuf(&mut r)).await
+            //     {
+            //         log::info!("LlmChatNode response failed, err: {:?}", &e);
+            //         drop(s);
+            //         return;
+            //     }
+            //     if let Err(_) = s.send(r) {
+            //         log::info!("LlmChatNode sent response failed.");
+            //     }
+            // });
+            // match rev.recv() {
+            //     Ok(s) => {
+            //         log::info!("LLM response {}", &s);
+            //         response.answers.push(AnswerData {
+            //             text: s,
+            //             answer_type: AnswerType::TextPlain,
+            //         });
+            //     }
+            //     // Err(tokio::sync::oneshot::error::TryRecvError::Closed) => {}
+            //     Err(e) => log::info!("LlmChatNode response failed, err: {:?}", &e),
+            // }
+            // let mut s = String::with_capacity(1024);
+            // if let Err(e) = tokio::runtime::Handle::current().block_on(async {
+            //     crate::ai::chat::chat(&req.robot_id, &self.prompt, ResultReceiver::StrBuf(&mut s))
+            //         .await
+            // }) {
+            //     log::info!("LlmChatNode response failed, err: {:?}", &e);
+            // } else {
+            //     log::info!("LLM response {}", &s);
+            //     response.answers.push(AnswerData {
+            //         text: s,
+            //         answer_type: AnswerType::TextPlain,
+            //     });
+            // }
+            true
+        }
+    }
+}
+
 impl RuntimeNode for LlmChatNode {
     fn exec(
         &mut self,
@@ -473,7 +635,18 @@ impl RuntimeNode for LlmChatNode {
         channel_sender: &mut ResponseSenderWrapper,
     ) -> bool {
         // log::info!("Into LlmChatNode");
+        let r = self.inner_exec(req, ctx, response, channel_sender);
+        if r {
+            let r = RuntimeNnodeEnum::LlmChatNode(self.clone());
+            let bytes = rkyv::to_bytes::<rkyv::rancor::Error>(&r).unwrap();
+            ctx.node = Some(bytes.into_vec());
+        } else {
+            add_next_node(ctx, &self.next_node_id);
+        }
+        r
+        /*
         self.cur_run_times = self.cur_run_times + 1;
+        let mut check_contains_str: Option<&String> = None;
         match &self.exit_condition {
             LlmChatNodeExitCondition::Intent(i) => {
                 if req.user_input_intent.is_some() && req.user_input_intent.as_ref().unwrap().eq(i)
@@ -490,6 +663,7 @@ impl RuntimeNode for LlmChatNode {
                 }
             }
             LlmChatNodeExitCondition::LlmResultContains(s) => {
+                check_contains_str = Some(s);
             }
             LlmChatNodeExitCondition::MaxChatTimes(t) => {
                 if self.cur_run_times > *t {
@@ -565,13 +739,24 @@ impl RuntimeNode for LlmChatNode {
                     LlmChatAnswerTimeoutThen::ResponseAlternateText(t) => s.push_str(t),
                     LlmChatAnswerTimeoutThen::DoNothing => return false,
                 }
-            }
-            log::info!("LLM response |{}|", &s);
-            if !s.is_empty() {
-                response.answers.push(AnswerData {
-                    content: s,
-                    content_type: AnswerContentType::TextPlain,
-                });
+            } else {
+                log::info!("LLM response |{}|", &s);
+                if !s.is_empty() {
+                    let mut contains_certain_str = false;
+                    if check_contains_str.is_some() {
+                        log::info!("check_contains_str |{}|", check_contains_str.as_ref().unwrap());
+                        contains_certain_str = s.contains(check_contains_str.unwrap());
+                        log::info!("contains_certain_str {}", contains_certain_str);
+                    }
+                    response.answers.push(AnswerData {
+                        content: s,
+                        content_type: AnswerContentType::TextPlain,
+                    });
+                    if contains_certain_str {
+                        add_next_node(ctx, &self.next_node_id);
+                        return false;
+                    }
+                }
             }
             log::info!("LLM response took {:?}", now.elapsed());
             // let (s, rev) = std::sync::mpsc::channel::<String>();
@@ -616,6 +801,7 @@ impl RuntimeNode for LlmChatNode {
             // }
             true
         }
+        */
     }
 }
 

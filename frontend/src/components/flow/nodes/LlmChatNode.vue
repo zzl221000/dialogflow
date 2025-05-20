@@ -171,7 +171,7 @@ const saveForm = () => {
     else if (nodeExitType == 'SpecialInputs')
         nodeData.exitCondition[nodeExitType] = nodeData.exitSpecialInputs;
     else if (nodeExitType == 'LlmResultContains')
-        nodeData.exitCondition[nodeExitType] = nodeData.LlmResultContains;
+        nodeData.exitCondition[nodeExitType] = nodeData.exitLlmResultContains;
     else if (nodeExitType == 'MaxChatTimes')
         nodeData.exitCondition[nodeExitType] = nodeData.maxChatTimes;
     nodeData.prompt = JSON.stringify([{ "role": "user", "content": nodeData.promptText },])

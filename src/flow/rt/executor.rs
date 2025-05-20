@@ -10,8 +10,7 @@ use crate::flow::rt::node::RuntimeNode;
 use crate::intent::detector;
 use crate::result::{Error, Result};
 
-static HTML_TAG_REGEX: LazyLock<Regex> =
-    LazyLock::new(|| Regex::new(r"<[^>]+>").unwrap());
+static HTML_TAG_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"<[^>]+>").unwrap());
 
 pub(in crate::flow::rt) async fn process(
     req: &mut Request,
