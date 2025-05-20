@@ -1,3 +1,7 @@
+use std::sync::LazyLock;
+
+use regex::Regex;
+
 use super::context::Context;
 use super::dto::{Request, ResponseData, ResponseSenderWrapper};
 use crate::ai::completion::Prompt;
@@ -5,6 +9,9 @@ use crate::flow::rt::dto::UserInputResult;
 use crate::flow::rt::node::RuntimeNode;
 use crate::intent::detector;
 use crate::result::{Error, Result};
+
+static HTML_TAG_REGEX: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"<[^>]+>").unwrap());
 
 pub(in crate::flow::rt) async fn process(
     req: &mut Request,
@@ -46,16 +53,16 @@ pub(in crate::flow::rt) async fn process(
     // let now = std::time::Instant::now();
     ctx.chat_history.push(Prompt {
         role: String::from("user"),
-        content: req.user_input.clone(),
+        content: HTML_TAG_REGEX.replace_all(&req.user_input, "").to_string(),
     });
     let r = exec(req, &mut ctx);
     if r.is_ok() {
-        let (res, receiver) = r.as_ref().unwrap();
+        let (res, _receiver) = r.as_ref().unwrap();
         if !res.answers.is_empty() {
             for a in res.answers.iter() {
                 ctx.chat_history.push(Prompt {
                     role: String::from("assistant"),
-                    content: a.content.clone(),
+                    content: HTML_TAG_REGEX.replace_all(&a.content, "").to_string(),
                 });
             }
         }
