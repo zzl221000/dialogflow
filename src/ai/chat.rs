@@ -325,6 +325,10 @@ async fn ollama(
                         if let Some(content) = message.get("content") {
                             if content.is_string() {
                                 if let Some(s) = content.as_str() {
+                                    if sender.is_closed() {
+                                        log::warn!("Ollama channel sender is closed");
+                                        break;
+                                    }
                                     let m = String::from(s);
                                     log::info!("Ollama push {}", &m);
                                     crate::sse_send!(sender, m);

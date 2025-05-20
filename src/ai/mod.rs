@@ -9,5 +9,6 @@ pub(crate) mod gemma;
 pub(super) mod huggingface;
 pub(super) mod llama;
 pub(super) mod phi3;
+pub(super) mod qwen3;
 mod token_output_stream;
 pub(crate) mod tts;

@@ -14,6 +14,7 @@ const nodeData = reactive({
     exitCondition: { "": "" },
     exitIntent: '',
     exitSpecialInputs: '',
+    exitLlmResultContains: '',
     maxChatTimes: 1,
     responseStreaming: false,
     connectTimeout: 1000,
@@ -122,7 +123,17 @@ const updateBrief = () => {
     modelName.value = settings.chatProvider.provider.model;
     let h = 'Chat model: ' + settings.chatProvider.provider.model + ' of ' + settings.chatProvider.provider.id;
     h += '<br/>History context length: ' + nodeData.contextLength;
-    h += '<br/>Exit this node by: ' + nodeData.nodeExitType;
+    h += '<br/>Exit this node by: ' + nodeData.nodeExitType.substring(6);
+    // if (nodeData.nodeExitType == 'exitByIntent') {
+    //     const intent = intents.find(i => i.intent_id == nodeData.exitIntent);
+    //     h += '<br/>Intent: ' + (intent ? intent.intent_name : '');
+    // } else if (nodeData.nodeExitType == 'exitBySpecialInputs') {
+    //     h += '<br/>Special inputs: ' + nodeData.exitSpecialInputs;
+    // } else if (nodeData.nodeExitType == 'exitByLlmResultContains') {
+    //     h += '<br/>LLM result contains: ' + nodeData.exitLlmResultContains;
+    // } else if (nodeData.nodeExitType == 'exitByMaxChatTimes') {
+    //     h += '<br/>Max chat times: ' + nodeData.maxChatTimes;
+    // }
     nodeData.brief = h;
 }
 
@@ -136,6 +147,8 @@ const validate = () => {
         m.push('Please select an intent to use for exiting.');
     if (d.nodeExitType == 'exitBySpecialInputs' && !d.exitSpecialInputs)
         m.push('Please type some special inputs for exiting.');
+    if (d.nodeExitType == 'exitByLlmResultContains' && !d.exitLlmResultContains)
+        m.push('Please enter the string contained in the LLM result.');
     if (whenTimeoutThen.value == 'ResponseAlternateText' && !responseAlternateText.value)
         m.push('Please enter alternate text.');
     d.valid = m.length == 0;
@@ -157,6 +170,8 @@ const saveForm = () => {
         nodeData.exitCondition[nodeExitType] = nodeData.exitIntent;
     else if (nodeExitType == 'SpecialInputs')
         nodeData.exitCondition[nodeExitType] = nodeData.exitSpecialInputs;
+    else if (nodeExitType == 'LlmResultContains')
+        nodeData.exitCondition[nodeExitType] = nodeData.LlmResultContains;
     else if (nodeExitType == 'MaxChatTimes')
         nodeData.exitCondition[nodeExitType] = nodeData.maxChatTimes;
     nodeData.prompt = JSON.stringify([{ "role": "user", "content": nodeData.promptText },])
@@ -243,6 +258,7 @@ const hideForm = () => {
                     <el-radio-group v-model="nodeData.nodeExitType">
                         <el-radio value="exitByIntent">Intent</el-radio>
                         <el-radio value="exitBySpecialInputs">Special inputs</el-radio>
+                        <el-radio value="exitByLlmResultContains">LLM result contains</el-radio>
                         <el-radio value="exitByMaxChatTimes">Max chat times</el-radio>
                     </el-radio-group>
                 </el-form-item>
@@ -252,6 +268,8 @@ const hideForm = () => {
                     </el-select>
                     <el-input v-model="nodeData.exitSpecialInputs"
                         v-show="nodeData.nodeExitType == 'exitBySpecialInputs'" />
+                    <el-input v-model="nodeData.exitLlmResultContains"
+                        v-show="nodeData.nodeExitType == 'exitByLlmResultContains'" />
                     <el-input-number v-model="nodeData.maxChatTimes" :min="1" :max="200" :step="1"
                         v-show="nodeData.nodeExitType == 'exitByMaxChatTimes'" />
                 </el-form-item>
