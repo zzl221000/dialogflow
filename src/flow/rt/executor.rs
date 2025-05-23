@@ -40,7 +40,7 @@ pub(in crate::flow::rt) async fn process(
     }
     // log::info!("Intent detection took {:?}", now.elapsed());
     if req.import_variables.is_some() {
-        let import_variables = std::mem::replace(&mut req.import_variables, None);
+        let import_variables = Option::take(&mut req.import_variables);
         let mut import_variables = import_variables.unwrap();
         for v in import_variables.iter_mut() {
             let k = std::mem::take(&mut v.var_name);
@@ -84,7 +84,7 @@ pub(in crate::flow::rt) fn exec(
         // let now = std::time::Instant::now();
         if let Some(mut n) = ctx.pop_node() {
             // println!("pop node {:?}", now.elapsed());
-            let ret = n.exec(&req, ctx, &mut response, &mut sender_wapper);
+            let ret = n.exec(req, ctx, &mut response, &mut sender_wapper);
             // println!("node exec {:?}", now.elapsed());
             if ret {
                 // log::info!("exec time {:?}", now.elapsed());

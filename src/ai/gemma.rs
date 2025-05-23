@@ -63,7 +63,7 @@ pub(super) fn gen_text(
         let context_size = if index > 0 { 1 } else { tokens.len() };
         let start_pos = tokens.len().saturating_sub(context_size);
         let ctxt = &tokens[start_pos..];
-        let input = Tensor::new(ctxt, &device)?.unsqueeze(0)?;
+        let input = Tensor::new(ctxt, device)?.unsqueeze(0)?;
         let logits = model.forward(&input, start_pos)?;
         let logits = logits.squeeze(0)?.squeeze(0)?.to_dtype(DType::F32)?;
         let logits = if super::completion::REPEAT_PENALTY == 1. {

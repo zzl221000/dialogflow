@@ -56,9 +56,9 @@ pub(crate) async fn req(
         .headers()
         .get(reqwest::header::CONTENT_TYPE)
         .map_or("", |h| h.to_str().unwrap());
-    let data = if content_type.find("text/").is_some()
-        || content_type.find("/json").is_some()
-        || content_type.find("/xml").is_some()
+    let data = if content_type.contains("text/")
+        || content_type.contains("/json")
+        || content_type.contains("/xml")
     {
         let s = res.text().await?;
         // println!("{}", s);

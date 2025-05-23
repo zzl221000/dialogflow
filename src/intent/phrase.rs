@@ -216,7 +216,7 @@ pub(crate) async fn batch_add(
     robot_id: &str,
     intent_id: &str,
     intent_name: &str,
-    phrases: &Vec<IntentPhraseData>,
+    phrases: &[IntentPhraseData],
 ) -> Result<()> {
     // check_datasource(robot_id, intent_id).await?;
     for p in phrases.iter() {

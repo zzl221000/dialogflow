@@ -156,57 +156,38 @@ impl ConditionData {
             }
             ConditionType::FlowVariable => match self.compare_type {
                 CompareType::HasValue => {
-                    if let Ok(op) = variable::get(&req.robot_id, &self.ref_data) {
-                        if let Some(v) = op {
-                            v.get_value(req, ctx).is_some()
-                        } else {
-                            false
-                        }
+                    if let Ok(Some(v)) = variable::get(&req.robot_id, &self.ref_data) {
+                        v.get_value(req, ctx).is_some()
                     } else {
                         false
                     }
                 }
                 CompareType::DoesNotHaveValue => {
-                    if let Ok(op) = variable::get(&req.robot_id, &self.ref_data) {
-                        if let Some(v) = op {
-                            v.get_value(req, ctx).is_none()
-                        } else {
-                            true
-                        }
+                    if let Ok(Some(v)) = variable::get(&req.robot_id, &self.ref_data) {
+                        v.get_value(req, ctx).is_none()
                     } else {
                         true
                     }
                 }
                 CompareType::EmptyString => {
-                    if let Ok(op) = variable::get(&req.robot_id, &self.ref_data) {
-                        if let Some(v) = op {
-                            if v.var_type == VariableType::Num {
-                                false
-                            } else {
-                                let val = v.get_value(req, ctx);
-                                val.is_none() || val.as_ref().unwrap().val_to_string().is_empty()
-                            }
-                        } else {
+                    if let Ok(Some(v)) = variable::get(&req.robot_id, &self.ref_data) {
+                        if v.var_type == VariableType::Num {
                             false
+                        } else {
+                            let val = v.get_value(req, ctx);
+                            val.is_none() || val.as_ref().unwrap().val_to_string().is_empty()
                         }
                     } else {
                         false
                     }
                 }
                 CompareType::Eq => {
-                    if let Ok(op) = variable::get(&req.robot_id, &self.ref_data) {
-                        if let Some(v) = op {
-                            if let Some(val) = v.get_value(req, ctx) {
-                                if self.case_sensitive_comparison {
-                                    val.val_to_string().eq(&self.get_target_data(req, ctx))
-                                } else {
-                                    unicase::eq(
-                                        &val.val_to_string(),
-                                        &self.get_target_data(req, ctx),
-                                    )
-                                }
+                    if let Ok(Some(v)) = variable::get(&req.robot_id, &self.ref_data) {
+                        if let Some(val) = v.get_value(req, ctx) {
+                            if self.case_sensitive_comparison {
+                                val.val_to_string().eq(&self.get_target_data(req, ctx))
                             } else {
-                                false
+                                unicase::eq(&val.val_to_string(), &self.get_target_data(req, ctx))
                             }
                         } else {
                             false
@@ -216,19 +197,12 @@ impl ConditionData {
                     }
                 }
                 CompareType::NotEq => {
-                    if let Ok(op) = variable::get(&req.robot_id, &self.ref_data) {
-                        if let Some(v) = op {
-                            if let Some(val) = v.get_value(req, ctx) {
-                                if self.case_sensitive_comparison {
-                                    !val.val_to_string().eq(&self.get_target_data(req, ctx))
-                                } else {
-                                    !unicase::eq(
-                                        &val.val_to_string(),
-                                        &self.get_target_data(req, ctx),
-                                    )
-                                }
+                    if let Ok(Some(v)) = variable::get(&req.robot_id, &self.ref_data) {
+                        if let Some(val) = v.get_value(req, ctx) {
+                            if self.case_sensitive_comparison {
+                                !val.val_to_string().eq(&self.get_target_data(req, ctx))
                             } else {
-                                true
+                                !unicase::eq(&val.val_to_string(), &self.get_target_data(req, ctx))
                             }
                         } else {
                             true
@@ -238,27 +212,21 @@ impl ConditionData {
                     }
                 }
                 CompareType::Contains => {
-                    if let Ok(op) = variable::get(&req.robot_id, &self.ref_data) {
-                        if let Some(v) = op {
-                            if v.var_type == VariableType::Num {
-                                false
+                    if let Ok(Some(v)) = variable::get(&req.robot_id, &self.ref_data) {
+                        if v.var_type == VariableType::Num {
+                            false
+                        } else if let Some(val) = v.get_value(req, ctx) {
+                            if self.case_sensitive_comparison {
+                                val.val_to_string()
+                                    .contains(&self.get_target_data(req, ctx))
                             } else {
-                                if let Some(val) = v.get_value(req, ctx) {
-                                    if self.case_sensitive_comparison {
-                                        val.val_to_string()
-                                            .contains(&self.get_target_data(req, ctx))
-                                    } else {
-                                        let mut s = val.val_to_string();
-                                        s.make_ascii_lowercase();
-                                        s.contains(&self.get_target_data(req, ctx).to_lowercase())
-                                    }
-                                    // val.val_to_string()
-                                    //     .find(&self.get_target_data(req, ctx))
-                                    //     .is_some()
-                                } else {
-                                    true
-                                }
+                                let mut s = val.val_to_string();
+                                s.make_ascii_lowercase();
+                                s.contains(&self.get_target_data(req, ctx).to_lowercase())
                             }
+                            // val.val_to_string()
+                            //     .find(&self.get_target_data(req, ctx))
+                            //     .is_some()
                         } else {
                             true
                         }
@@ -271,14 +239,11 @@ impl ConditionData {
                         if let Some(v) = op {
                             if v.var_type == VariableType::Num {
                                 false
+                            } else if let Some(val) = v.get_value(req, ctx) {
+                                !val.val_to_string()
+                                    .contains(&self.get_target_data(req, ctx))
                             } else {
-                                if let Some(val) = v.get_value(req, ctx) {
-                                    val.val_to_string()
-                                        .find(&self.get_target_data(req, ctx))
-                                        .is_none()
-                                } else {
-                                    true
-                                }
+                                true
                             }
                         } else {
                             true

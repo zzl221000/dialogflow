@@ -37,5 +37,5 @@ pub(super) fn get_sender(session_id: &str) -> Result<Option<Sender<String>>> {
         let s = l.get(session_id).unwrap();
         return Ok(Some(s.clone()));
     }
-    return Ok(None);
+    Ok(None)
 }

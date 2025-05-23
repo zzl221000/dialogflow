@@ -100,7 +100,7 @@ pub(super) fn gen_text(
             (tokens.len(), 0)
         };
         let ctxt = &tokens[tokens.len().saturating_sub(context_size)..];
-        let input = Tensor::new(ctxt, &device)?.unsqueeze(0)?;
+        let input = Tensor::new(ctxt, device)?.unsqueeze(0)?;
         let logits = model.forward(&input, context_index, &mut cache)?;
         let logits = logits.squeeze(0)?;
         let logits = if super::completion::REPEAT_PENALTY == 1. {

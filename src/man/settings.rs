@@ -291,7 +291,7 @@ pub(crate) fn init_global() -> Result<GlobalSettings> {
     let format = time::format_description::parse("[year]-[month]-[day] [hour]:[minute]:[second]]")
         .expect("Invalid format description");
     let t = time::OffsetDateTime::now_utc();
-    let t_str = t.format(&format).map_err(|e| Error::TimeFormatError(e))?;
+    let t_str = t.format(&format).map_err(Error::TimeFormatError)?;
     db::write(TABLE, "db_init_time", &t_str)?;
     db::write(TABLE, "version", &String::from(server::VERSION))?;
     Ok(settings)
@@ -350,7 +350,7 @@ pub(crate) fn save_settings(robot_id: &str, data: Settings) -> Result<()> {
     if let completion::TextGenerationProvider::HuggingFace(m) =
         &data.text_generation_provider.provider
     {
-        if let Err(e) = crate::ai::chat::replace_model_cache(robot_id, &m) {
+        if let Err(e) = crate::ai::chat::replace_model_cache(robot_id, m) {
             log::warn!(
                 "Hugging face model files for chat were incorrect. Err: {:?}",
                 &e
@@ -361,7 +361,7 @@ pub(crate) fn save_settings(robot_id: &str, data: Settings) -> Result<()> {
     if let completion::TextGenerationProvider::HuggingFace(m) =
         &data.text_generation_provider.provider
     {
-        if let Err(e) = completion::replace_model_cache(robot_id, &m) {
+        if let Err(e) = completion::replace_model_cache(robot_id, m) {
             log::warn!(
                 "Hugging face model files for completion were incorrect. Err: {:?}",
                 &e
@@ -372,7 +372,7 @@ pub(crate) fn save_settings(robot_id: &str, data: Settings) -> Result<()> {
     if let embedding::SentenceEmbeddingProvider::HuggingFace(m) =
         &data.sentence_embedding_provider.provider
     {
-        match crate::ai::huggingface::load_bert_model_files(&m.get_info().repository) {
+        match crate::ai::huggingface::load_bert_model_files(m.get_info().repository) {
             Ok(m) => embedding::replace_model_cache(robot_id, m),
             Err(e) => {
                 log::warn!(

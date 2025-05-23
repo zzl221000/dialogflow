@@ -30,8 +30,8 @@ static LOCK: LazyLock<Mutex<()>> = LazyLock::new(|| Mutex::new(()));
 pub(crate) async fn list(headers: HeaderMap, Query(q): Query<SubFlowFormData>) -> Response {
     let is_en = server::is_en(&headers);
     let template = demo::get_demo(is_en, &q.main_flow_id);
-    if template.is_some() {
-        return (StatusCode::OK, template.unwrap()).into_response();
+    if let Some(t) = template {
+        return (StatusCode::OK, t).into_response();
     }
     // to_res::<Option<Vec<SubFlowDetail>>>(db::query(TABLE, q.main_flow_id.as_str())).into_response()
     to_res::<Option<Vec<SubFlowDetail>>>(db_executor!(
@@ -56,13 +56,11 @@ pub(crate) async fn simple_list(Query(q): Query<SubFlowFormData>) -> Response {
         TABLE_SUFFIX,
         q.main_flow_id.as_str()
     );
-    if let Ok(op) = r {
-        if let Some(mut d) = op {
-            for f in d.iter_mut() {
-                f.canvas.clear();
-            }
-            return to_res::<Vec<SubFlowDetail>>(Ok(d)).into_response();
+    if let Ok(Some(mut d)) = r {
+        for f in d.iter_mut() {
+            f.canvas.clear();
         }
+        return to_res::<Vec<SubFlowDetail>>(Ok(d)).into_response();
     }
     "[]".into_response()
 }
@@ -76,17 +74,14 @@ pub(crate) fn new_subflow(
     db_executor!(db::query, robot_id, TABLE_SUFFIX, mainflow_id)
         .map(|op: Option<Vec<SubFlowDetail>>| {
             let mut subflow = SubFlowDetail::new(subflow_name);
-            let subflows = {
-                if let Some(mut flows) = op {
-                    flows.push(subflow);
-                    flows
-                } else {
-                    subflow.id.clear();
-                    subflow.id.push_str(mainflow_id);
-                    vec![subflow]
-                }
-            };
-            subflows
+            if let Some(mut flows) = op {
+                flows.push(subflow);
+                flows
+            } else {
+                subflow.id.clear();
+                subflow.id.push_str(mainflow_id);
+                vec![subflow]
+            }
         })
         .and_then(|subflows| {
             db_executor!(db::write, robot_id, TABLE_SUFFIX, mainflow_id, &subflows)?;
@@ -146,18 +141,16 @@ pub(crate) async fn delete(Query(q): Query<SubFlowFormData>) -> impl IntoRespons
                 TABLE_SUFFIX,
                 q.main_flow_id.as_str()
             );
-            if let Ok(op) = result {
-                if let Some(mut flows) = op {
-                    if idx < flows.len() {
-                        flows.remove(idx);
-                        db_executor!(
-                            db::write,
-                            &q.robot_id,
-                            TABLE_SUFFIX,
-                            &q.main_flow_id,
-                            &flows
-                        )?;
-                    }
+            if let Ok(Some(mut flows)) = result {
+                if idx < flows.len() {
+                    flows.remove(idx);
+                    db_executor!(
+                        db::write,
+                        &q.robot_id,
+                        TABLE_SUFFIX,
+                        &q.main_flow_id,
+                        &flows
+                    )?;
                 }
             }
             Ok(())

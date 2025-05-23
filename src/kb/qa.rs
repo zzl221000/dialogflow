@@ -272,7 +272,7 @@ pub(crate) async fn retrieve_answer(
         .bind(serde_json::to_string(&vectors.0)?)
         .fetch_all(DATA_SOURCE.get().unwrap())
         .await?;
-    if results.len() > 0 {
+    if !results.is_empty() {
         return Ok((
             Some(serde_json::from_str(results[0].try_get(0)?)?),
             results[0].try_get(1)?,

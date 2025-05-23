@@ -43,25 +43,21 @@ pub(crate) struct Context {
 impl Context {
     pub(crate) fn get(robot_id: &str, session_id: &str) -> Self {
         let r: Result<Option<Context>> = db::query(TABLE, session_id);
-        if let Ok(o) = r {
-            if let Some(mut ctx) = o {
-                ctx.last_active_time = SystemTime::now()
-                    .duration_since(UNIX_EPOCH)
-                    .unwrap()
-                    .as_secs();
-                return ctx;
-            }
+        if let Ok(Some(mut ctx)) = r {
+            ctx.last_active_time = SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .unwrap()
+                .as_secs();
+            return ctx;
         }
         let r: Result<Option<Vec<String>>> = db::query(TABLE, CONTEXT_KEY);
-        if let Ok(op) = r {
-            if let Some(mut d) = op {
-                d.push(String::from(session_id));
-                if let Err(e) = db::write(TABLE, CONTEXT_KEY, &d) {
-                    eprint!("{:?}", e);
-                }
+        if let Ok(Some(mut d)) = r {
+            d.push(String::from(session_id));
+            if let Err(e) = db::write(TABLE, CONTEXT_KEY, &d) {
+                eprint!("{:?}", e);
             }
         }
-        let ctx = Self {
+        Self {
             robot_id: String::from(robot_id),
             main_flow_id: String::with_capacity(64),
             session_id: String::from(session_id),
@@ -75,8 +71,7 @@ impl Context {
                 .unwrap()
                 .as_secs(),
             chat_history: Vec::with_capacity(16),
-        };
-        ctx
+        }
     }
 
     pub(crate) fn save(&self) -> Result<()> {
@@ -110,7 +105,7 @@ impl Context {
         // log::info!("nodes len {}", self.nodes.len());
         // let now = std::time::Instant::now();
         if self.node.is_some() {
-            let node = std::mem::replace(&mut self.node, None);
+            let node = Option::take(&mut self.node);
             let v = node.unwrap();
             match crate::flow::rt::node::deser_node(v.as_ref()) {
                 Ok(n) => return Some(n),

@@ -61,32 +61,54 @@ pub(crate) trait RuntimeNode {
 fn replace_vars(text: &str, req: &Request, ctx: &mut Context) -> Result<String> {
     let mut new_str = String::with_capacity(128);
     let mut start = 0usize;
-    loop {
-        if let Some(mut begin) = text[start..].find(VAR_WRAP_SYMBOL) {
-            begin = start + begin;
-            new_str.push_str(&text[start..begin]);
-            if let Some(mut end) = text[begin + 1..].find(VAR_WRAP_SYMBOL) {
-                end = begin + end + 1;
-                // println!("{} {} {} {}", &text[begin + 1..],start, begin,end);
-                let var = variable::get(&req.robot_id, &text[begin + 1..end])?;
-                if let Some(v) = var {
-                    if let Some(value) = v.get_value(req, ctx) {
-                        new_str.push_str(&value.val_to_string());
-                    }
-                    start = end + 1;
-                } else {
-                    new_str.push_str(&text[begin..end]);
-                    start = end;
+    while let Some(mut begin) = text[start..].find(VAR_WRAP_SYMBOL) {
+        begin += start;
+        new_str.push_str(&text[start..begin]);
+        if let Some(mut end) = text[begin + 1..].find(VAR_WRAP_SYMBOL) {
+            end = begin + end + 1;
+            // println!("{} {} {} {}", &text[begin + 1..],start, begin,end);
+            let var = variable::get(&req.robot_id, &text[begin + 1..end])?;
+            if let Some(v) = var {
+                if let Some(value) = v.get_value(req, ctx) {
+                    new_str.push_str(&value.val_to_string());
                 }
-                // new_str.push_str(&variable::get_value(&text[begin + 1..end - 1], req, ctx));
+                start = end + 1;
             } else {
-                start = begin;
-                break;
+                new_str.push_str(&text[begin..end]);
+                start = end;
             }
+            // new_str.push_str(&variable::get_value(&text[begin + 1..end - 1], req, ctx));
         } else {
+            start = begin;
             break;
         }
     }
+    // loop {
+    //     if let Some(mut begin) = text[start..].find(VAR_WRAP_SYMBOL) {
+    //         begin += start;
+    //         new_str.push_str(&text[start..begin]);
+    //         if let Some(mut end) = text[begin + 1..].find(VAR_WRAP_SYMBOL) {
+    //             end = begin + end + 1;
+    //             // println!("{} {} {} {}", &text[begin + 1..],start, begin,end);
+    //             let var = variable::get(&req.robot_id, &text[begin + 1..end])?;
+    //             if let Some(v) = var {
+    //                 if let Some(value) = v.get_value(req, ctx) {
+    //                     new_str.push_str(&value.val_to_string());
+    //                 }
+    //                 start = end + 1;
+    //             } else {
+    //                 new_str.push_str(&text[begin..end]);
+    //                 start = end;
+    //             }
+    //             // new_str.push_str(&variable::get_value(&text[begin + 1..end - 1], req, ctx));
+    //         } else {
+    //             start = begin;
+    //             break;
+    //         }
+    //     } else {
+    //         break;
+    //     }
+    // }
     new_str.push_str(&text[start..]);
     Ok(new_str)
 }
@@ -115,7 +137,7 @@ impl RuntimeNode for TextNode {
     ) -> bool {
         // log::info!("Into TextNode");
         // let now = std::time::Instant::now();
-        match replace_vars(&self.text, &req, ctx) {
+        match replace_vars(&self.text, req, ctx) {
             Ok(answer) => response.answers.push(AnswerData {
                 content: answer,
                 content_type: self.text_type.clone(),
@@ -281,35 +303,32 @@ impl RuntimeNode for ExternalHttpCallNode {
     ) -> bool {
         // println!("Into ExternalHttpCallNode");
         let mut goto_node_id = &self.next_node_id;
-        if let Ok(op) =
+        if let Ok(Some(api)) =
             crate::external::http::crud::get_detail(&req.robot_id, self.http_api_id.as_str())
         {
-            if let Some(api) = op {
-                if self.async_req {
-                    tokio::spawn(http::status_code(
+            if self.async_req {
+                tokio::spawn(http::status_code(
+                    api,
+                    self.timeout_milliseconds,
+                    ctx.vars.clone(),
+                ));
+            } else {
+                tokio::task::block_in_place(/*move*/ || {
+                    match tokio::runtime::Handle::current().block_on(http::status_code(
                         api,
                         self.timeout_milliseconds,
                         ctx.vars.clone(),
-                    ));
-                } else {
-                    tokio::task::block_in_place(/*move*/ || {
-                        match tokio::runtime::Handle::current().block_on(http::status_code(
-                            api,
-                            self.timeout_milliseconds,
-                            ctx.vars.clone(),
-                        )) {
-                            Ok(r) => match r {
-                                200u16 => {
-                                    goto_node_id = &self.successful_node_id;
-                                }
-                                _ => {}
-                            },
-                            Err(e) => {
-                                log::error!("{:?}", e);
+                    )) {
+                        Ok(r) => {
+                            if r == 200u16 {
+                                goto_node_id = &self.successful_node_id;
                             }
                         }
-                    });
-                }
+                        Err(e) => {
+                            log::error!("{:?}", e);
+                        }
+                    }
+                });
             }
         }
         add_next_node(ctx, goto_node_id);
@@ -404,7 +423,6 @@ impl SendEmailNode {
 
             Ok(mailer.send(&email).map(|r| {
                 log::info!("Sent email response: {:?}", r);
-                ()
             })?)
         }
     }
@@ -416,16 +434,14 @@ impl RuntimeNode for SendEmailNode {
         req: &Request,
         ctx: &mut Context,
         _response: &mut ResponseData,
-        channel_sender: &mut ResponseSenderWrapper,
+        _channel_sender: &mut ResponseSenderWrapper,
     ) -> bool {
         // println!("Into SendEmailNode");
-        if let Ok(op) = get_settings(&req.robot_id) {
-            if let Some(settings) = op {
-                if !settings.smtp_host.is_empty() {
-                    match self.send_email(&settings) {
-                        Ok(_) => add_next_node(ctx, &self.successful_node_id),
-                        Err(_) => add_next_node(ctx, self.goto_node_id.as_ref().unwrap()),
-                    }
+        if let Ok(Some(settings)) = get_settings(&req.robot_id) {
+            if !settings.smtp_host.is_empty() {
+                match self.send_email(&settings) {
+                    Ok(_) => add_next_node(ctx, &self.successful_node_id),
+                    Err(_) => add_next_node(ctx, self.goto_node_id.as_ref().unwrap()),
                 }
             }
         }
@@ -473,7 +489,7 @@ impl LlmChatNode {
         channel_sender: &mut ResponseSenderWrapper,
     ) -> bool {
         // log::info!("Into LlmChatNode");
-        self.cur_run_times = self.cur_run_times + 1;
+        self.cur_run_times += 1;
         let mut check_contains_str: Option<&String> = None;
         match &self.exit_condition {
             LlmChatNodeExitCondition::Intent(i) => {
@@ -517,8 +533,8 @@ impl LlmChatNode {
             // let s = s_op.unwrap();
             // let ticket = String::new();
             let robot_id = req.robot_id.clone();
-            let connect_timeout = self.connect_timeout.clone();
-            let read_timeout = self.read_timeout.clone();
+            let connect_timeout = self.connect_timeout;
+            let read_timeout = self.read_timeout;
             // let (s, r) = tokio::sync::mpsc::channel::<String>(1);
             let (s, r) = tokio::sync::mpsc::channel::<String>(2);
             channel_sender.receiver = Some(r);
@@ -944,5 +960,5 @@ pub(crate) fn deser_node(bytes: &[u8]) -> Result<RuntimeNnodeEnum> {
     // let archived = rkyv::access::<ArchivedRuntimeNnodeEnum, rkyv::rancor::Error>(bytes).unwrap();
     // let deserialized = rkyv::deserialize::<RuntimeNnodeEnum, rkyv::rancor::Error>(archived).unwrap();
     // log::info!("deser_node time {:?}", now.elapsed());
-    return Ok(r);
+    Ok(r)
 }
