@@ -24,7 +24,7 @@ fn walk_assets(path: impl AsRef<Path>) -> Result<Vec<PathBuf>, std::io::Error> {
                         continue;
                     }
                     let ext = ext.unwrap().to_os_string().into_string().unwrap();
-                    if ext.find("gz").is_some() {
+                    if ext.contains("gz") {
                         continue;
                     }
                     files.push(entry.path());
@@ -138,7 +138,7 @@ fn main() -> Result<(), Box<dyn Error>> {
             name = f.replace("\\", "/"),
             counter = i,
         )?;
-        i = i + 1;
+        i += 1;
     }
     writeln!(&mut service_asset_file, r##"])}});"##,)?;
 

@@ -40,9 +40,9 @@ pub(crate) fn init(robot_id: &str, is_en: bool) -> Result<()> {
     };
     let regexes: Vec<&str> = vec![];
     let mut intent_detail = IntentDetail::new(if is_en { "Positive" } else { "肯定" });
-    let mut v = keywords.into_iter().map(|s| String::from(s)).collect();
+    let mut v = keywords.into_iter().map(String::from).collect();
     intent_detail.keywords.append(&mut v);
-    let mut v = regexes.into_iter().map(|s| String::from(s)).collect();
+    let mut v = regexes.into_iter().map(String::from).collect();
     intent_detail.regexes.append(&mut v);
     // let intent_detail = IntentDetail {
     //     intent_idx: 0,
@@ -115,9 +115,9 @@ pub(crate) fn init(robot_id: &str, is_en: bool) -> Result<()> {
     };
     let regexes: Vec<&str> = vec![];
     let mut intent_detail = IntentDetail::new(if is_en { "Negative" } else { "否定" });
-    let mut v = keywords.into_iter().map(|s| String::from(s)).collect();
+    let mut v = keywords.into_iter().map(String::from).collect();
     intent_detail.keywords.append(&mut v);
-    let mut v = regexes.into_iter().map(|s| String::from(s)).collect();
+    let mut v = regexes.into_iter().map(String::from).collect();
     intent_detail.regexes.append(&mut v);
     // let intent_detail = IntentDetail {
     //     intent_idx: 1,
@@ -388,16 +388,14 @@ pub(crate) async fn remove_phrase(Json(params): Json<IntentFormData>) -> impl In
     let key = params.id.as_str();
     let r: Result<Option<IntentDetail>> =
         db_executor!(db::query, &params.robot_id, TABLE_SUFFIX, key);
-    if let Ok(result) = r {
-        if let Some(mut d) = result {
-            let phrase = d.phrases.remove(phrase_idx);
-            let r = super::phrase::remove(&params.robot_id, phrase.id).await;
-            if let Err(e) = r {
-                return to_res(Err(e));
-            }
-            let result = db_executor!(db::write, &params.robot_id, TABLE_SUFFIX, key, &d);
-            return to_res(result);
+    if let Ok(Some(mut d)) = r {
+        let phrase = d.phrases.remove(phrase_idx);
+        let r = super::phrase::remove(&params.robot_id, phrase.id).await;
+        if let Err(e) = r {
+            return to_res(Err(e));
         }
+        let result = db_executor!(db::write, &params.robot_id, TABLE_SUFFIX, key, &d);
+        return to_res(result);
     }
     to_res(Ok(()))
     // let r = params

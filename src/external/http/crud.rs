@@ -41,7 +41,7 @@ pub(crate) async fn detail(
     Path(id): Path<String>,
 ) -> impl IntoResponse {
     if let Some(robot_id) = q.get("robotId") {
-        let r: Result<Option<HttpReqInfo>> = get_detail(&robot_id, id.as_str());
+        let r: Result<Option<HttpReqInfo>> = get_detail(robot_id, id.as_str());
         to_res(r)
     } else {
         to_res(Err(Error::ErrorWithMessage(String::from(

@@ -43,7 +43,7 @@ pub(crate) async fn detect(robot_id: &str, s: &str) -> Result<Option<String>> {
                 return Ok(Some(detail.intent_name.clone()));
             }
         }
-        empty_phrase = detail.phrases.len() < 1;
+        empty_phrase = detail.phrases.is_empty();
     }
     if empty_phrase {
         return Ok(None);
@@ -66,7 +66,7 @@ pub(crate) async fn detect(robot_id: &str, s: &str) -> Result<Option<String>> {
     // let regex = regex::Regex::new(r"\s").unwrap();
     // log::info!("detect embedding {}", regex.replace_all(&s, ""));
     // let now = std::time::Instant::now();
-    let search_vector: Vec<f32> = embedding.0.into();
+    let search_vector: Vec<f32> = embedding.0;
     let similarity_threshold = embedding.1 as f64;
     let mut result = phrase::search(robot_id, &search_vector).await?;
     // log::info!("Searching vector took {:?}", now.elapsed());
@@ -74,7 +74,7 @@ pub(crate) async fn detect(robot_id: &str, s: &str) -> Result<Option<String>> {
         if let Some(record) = result.get_mut(0) {
             // log::info!("Record distance: {}", record.1);
             if (1f64 - record.1) >= similarity_threshold {
-                let s = std::mem::replace(&mut record.0, String::new());
+                let s = std::mem::take(&mut record.0);
                 return Ok(Some(s));
             }
         }

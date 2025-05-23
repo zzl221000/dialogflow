@@ -140,7 +140,7 @@ pub async fn start_app() {
             log::info!("Tip: You can check the random port in the settings to avoid this problem.");
             std::process::exit(-1);
         }
-        port = port + 1;
+        port += 1;
         if port == settings.port {
             log::error!("The listening port is occupied and the program fails to start.");
             log::info!("Tip: You can check the random port in the settings to avoid this problem.");
@@ -153,7 +153,7 @@ pub async fn start_app() {
     let listener = bind_res.unwrap();
 
     #[cfg(target_os = "windows")]
-    let _ = colored::control::set_virtual_terminal(true).unwrap();
+    colored::control::set_virtual_terminal(true).unwrap();
 
     log::info!(
         "-->  {} {}{}:{}",
@@ -341,13 +341,13 @@ fn convert_version(ver: &str) -> u64 {
     if arr[1].len() == 1 {
         v.push_str("00");
     } else if arr[1].len() == 2 {
-        v.push_str("0");
+        v.push('0');
     }
     v.push_str(arr[1]);
     if arr[2].len() == 1 {
         v.push_str("00");
     } else if arr[2].len() == 2 {
-        v.push_str("0");
+        v.push('0');
     }
     v.push_str(arr[2]);
     // log::info!("vernum={}", &v);
@@ -356,9 +356,9 @@ fn convert_version(ver: &str) -> u64 {
 
 async fn version() -> impl IntoResponse {
     let mut v = String::with_capacity(15);
-    let _ = v.push('"');
+    v.push('"');
     v.push_str(VERSION);
-    let _ = v.push('"');
+    v.push('"');
     v
 }
 

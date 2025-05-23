@@ -174,11 +174,9 @@ pub(crate) fn get(robot_id: &str, name: &str) -> Result<Option<Variable>> {
 }
 
 pub(crate) fn get_value(name: &str, req: &Request, ctx: &mut Context) -> String {
-    if let Ok(r) = get(&req.robot_id, name) {
-        if let Some(v) = r {
-            if let Some(val) = v.get_value(req, ctx) {
-                return val.val_to_string();
-            }
+    if let Ok(Some(v)) = get(&req.robot_id, name) {
+        if let Some(val) = v.get_value(req, ctx) {
+            return val.val_to_string();
         }
     }
     String::new()

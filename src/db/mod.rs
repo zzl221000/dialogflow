@@ -139,11 +139,9 @@ where
     let read = DB.begin_read()?;
     let table = read.open_table(table)?;
     let mut v: Vec<D> = Vec::with_capacity(20);
-    for range in table.iter()? {
-        if let Ok((_key, value)) = range {
-            let s: D = serde_json::from_slice(value.value())?;
-            v.push(s)
-        }
+    for (_key, value) in (table.iter()?).flatten() {
+        let s: D = serde_json::from_slice(value.value())?;
+        v.push(s)
     }
     Ok(v)
 }
@@ -308,7 +306,7 @@ pub(crate) fn save_txn(
         &str,
         &str,
         &str,
-        Box<&dyn erased_serde::Serialize>,
+        &dyn erased_serde::Serialize,
     )>,
 ) -> Result<()>
 // where

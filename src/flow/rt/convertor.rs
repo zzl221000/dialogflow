@@ -24,8 +24,8 @@ pub(crate) fn convert_flow(is_en: bool, robot_id: &str, mainflow_id: &str) -> Re
         }
         r.unwrap()
     };
-    let mut idx = 0;
-    for f in flows.iter() {
+    // let mut idx = 0;
+    for (idx, f) in flows.iter().enumerate() {
         // if !f.valid {
         //     return Err(Error::ErrorWithMessage(format!(
         //         "子流程：{} 校验不通过",
@@ -33,7 +33,7 @@ pub(crate) fn convert_flow(is_en: bool, robot_id: &str, mainflow_id: &str) -> Re
         //     )));
         // }
         convert_subflow(mainflow_id, idx, f)?;
-        idx = idx + 1;
+        // idx += 1;
     }
     Ok(())
 }
@@ -111,7 +111,7 @@ fn convert_subflow(mainflow_id: &str, flow_idx: usize, f: &SubFlowDetail) -> Res
                     "Node data information not found",
                 )));
             }
-            node_cnt = node_cnt + 1;
+            node_cnt += 1;
         }
     }
     // let mut inner_cells:&mut Vec<crate::flow::canvas::dto::CanvasCell> = cells.cells.as_mut();
@@ -192,7 +192,7 @@ fn convert_node(main_flow_id: &str, node: &mut Node) -> Result<()> {
                 } else {
                     format!("{}-{}", &n.node_id, cnt)
                 };
-                cnt = cnt + 1;
+                cnt += 1;
                 if BranchType::GotoAnotherNode == b.branch_type {
                     let node = GotoAnotherNode {
                         next_node_id: b.target_node_id.clone(),
@@ -252,8 +252,8 @@ fn convert_node(main_flow_id: &str, node: &mut Node) -> Result<()> {
             let node = CollectNode {
                 var_name: n.collect_save_var_name.clone(),
                 collect_type: n.collect_type.clone(),
-                successful_node_id: successful_node_id,
-                failed_node_id: failed_node_id,
+                successful_node_id,
+                failed_node_id,
             };
             let r = RuntimeNnodeEnum::CollectNode(node);
             let bytes = rkyv::to_bytes::<rkyv::rancor::Error>(&r).unwrap();
@@ -270,8 +270,8 @@ fn convert_node(main_flow_id: &str, node: &mut Node) -> Result<()> {
                 (String::new(), n.branches[0].target_node_id.clone())
             };
             let node = ExternalHttpCallNode {
-                successful_node_id: successful_node_id,
-                next_node_id: next_node_id,
+                successful_node_id,
+                next_node_id,
                 http_api_id: n.http_api_id.clone(),
                 timeout_milliseconds: n.timeout_milliseconds,
                 async_req: n.async_req,
@@ -282,29 +282,25 @@ fn convert_node(main_flow_id: &str, node: &mut Node) -> Result<()> {
             nodes.push((n.node_id.clone(), bytes));
         }
         Node::SendEmailNode(n) => {
-            let successful_node_id =
-                std::mem::replace(&mut n.branches[0].target_node_id, String::new());
+            let successful_node_id = std::mem::take(&mut n.branches[0].target_node_id);
             let goto_node_id = {
                 if n.async_send {
                     None
                 } else {
-                    Some(std::mem::replace(
-                        &mut n.branches[1].target_node_id,
-                        String::new(),
-                    ))
+                    Some(std::mem::take(&mut n.branches[1].target_node_id))
                 }
             };
             let node = SendEmailNode {
-                from: std::mem::replace(&mut n.from, String::new()),
-                to_recipients: std::mem::replace(&mut n.to_recipients, vec![]),
-                cc_recipients: std::mem::replace(&mut n.cc_recipients, vec![]),
-                bcc_recipients: std::mem::replace(&mut n.bcc_recipients, vec![]),
-                subject: std::mem::replace(&mut n.subject, String::new()),
-                content: std::mem::replace(&mut n.content, String::new()),
-                content_type: std::mem::replace(&mut n.content_type, String::new()),
+                from: std::mem::take(&mut n.from),
+                to_recipients: std::mem::take(&mut n.to_recipients),
+                cc_recipients: std::mem::take(&mut n.cc_recipients),
+                bcc_recipients: std::mem::take(&mut n.bcc_recipients),
+                subject: std::mem::take(&mut n.subject),
+                content: std::mem::take(&mut n.content),
+                content_type: std::mem::take(&mut n.content_type),
                 async_send: n.async_send,
-                successful_node_id: successful_node_id,
-                goto_node_id: goto_node_id,
+                successful_node_id,
+                goto_node_id,
             };
             let r = RuntimeNnodeEnum::SendEmailNode(node);
             let bytes = rkyv::to_bytes::<rkyv::rancor::Error>(&r).unwrap();

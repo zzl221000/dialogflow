@@ -108,10 +108,10 @@ impl Variable {
         let v = VariableValue::new(r, &self.var_type);
         if self.cache_enabled {
             ctx.vars.insert(self.var_name.clone(), v);
-            return ctx.vars.get(&self.var_name);
+            ctx.vars.get(&self.var_name)
         } else {
             ctx.none_persistent_vars.insert(self.var_name.clone(), v);
-            return ctx.none_persistent_vars.get(&self.var_name);
+            ctx.none_persistent_vars.get(&self.var_name)
         }
     }
     pub(crate) fn get_value<'a, 'b>(
@@ -166,38 +166,36 @@ impl Variable {
                         None
                     }
                 };
-                if cache.is_some() {
-                    return self.get_data_from_res(ctx, cache.as_ref().unwrap());
+                if let Some(c) = &cache {
+                    return self.get_data_from_res(ctx, c);
                 }
-                if let Ok(op) =
+                if let Ok(Some(api)) =
                     crate::external::http::crud::get_detail(&req.robot_id, &self.var_associate_data)
                 {
-                    if let Some(api) = op {
-                        return tokio::task::block_in_place(
-                            /*move*/
-                            || match tokio::runtime::Handle::current().block_on(
-                                crate::external::http::client::req(
-                                    api,
-                                    self.timeout_milliseconds,
-                                    &ctx.vars,
-                                ),
-                            ) {
-                                Ok(r) => match r {
-                                    crate::external::http::dto::ResponseData::Str(s) => {
-                                        // 下面这句，需要在get_data_from_res的上方，否则会报*ctx可变借用了两次，因为返回值，对ctx有引用
-                                        ctx.none_persistent_data
-                                            .insert(self.var_associate_data.clone(), s.clone());
-                                        return self.get_data_from_res(ctx, &s);
-                                    }
-                                    _ => None,
-                                },
-                                Err(e) => {
-                                    log::error!("{:?}", e);
-                                    None
+                    return tokio::task::block_in_place(
+                        /*move*/
+                        || match tokio::runtime::Handle::current().block_on(
+                            crate::external::http::client::req(
+                                api,
+                                self.timeout_milliseconds,
+                                &ctx.vars,
+                            ),
+                        ) {
+                            Ok(r) => match r {
+                                crate::external::http::dto::ResponseData::Str(s) => {
+                                    // 下面这句，需要在get_data_from_res的上方，否则会报*ctx可变借用了两次，因为返回值，对ctx有引用
+                                    ctx.none_persistent_data
+                                        .insert(self.var_associate_data.clone(), s.clone());
+                                    self.get_data_from_res(ctx, &s)
                                 }
+                                _ => None,
                             },
-                        );
-                    }
+                            Err(e) => {
+                                log::error!("{:?}", e);
+                                None
+                            }
+                        },
+                    );
                 }
                 None
             }

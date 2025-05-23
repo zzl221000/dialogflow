@@ -271,7 +271,7 @@ async fn open_ai(
             if choices.is_array() {
                 if let Some(choices) = choices.as_array() {
                     if !choices.is_empty() {
-                        if let Some(item) = choices.get(0) {
+                        if let Some(item) = choices.first() {
                             if let Some(delta) = item.get("delta") {
                                 if let Some(content) = delta.get("content") {
                                     if content.is_string() {

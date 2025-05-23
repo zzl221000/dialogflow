@@ -116,7 +116,7 @@ impl Node {
                     Self::err(f, t, &n.node_name, "verification failed")
                 } else if n.node_name.is_empty() {
                     Self::err(f, t, &n.node_name, "node name not filled in")
-                } else if n.branches.len() == 0 {
+                } else if n.branches.is_empty() {
                     Self::err(f, t, &n.node_name, "Conditional branch not set")
                 } else {
                     Ok(())
@@ -171,14 +171,12 @@ impl Node {
                     Self::err(f, t, &n.node_name, "verification failed")
                 } else if n.node_name.is_empty() {
                     Self::err(f, t, &n.node_name, "node name not filled in")
-                } else if n.branches.len() < 1 || n.branches.len() > 2 {
+                } else if n.branches.is_empty() || n.branches.len() > 2 {
                     Self::err(f, t, &n.node_name, "Branch information is incorrect")
+                } else if n.http_api_id.is_empty() {
+                    Self::err(f, t, &n.node_name, "No HTTP interface selected")
                 } else {
-                    if n.http_api_id.is_empty() {
-                        Self::err(f, t, &n.node_name, "No HTTP interface selected")
-                    } else {
-                        Ok(())
-                    }
+                    Ok(())
                 }
             }
             Node::SendEmailNode(n) => {
@@ -195,12 +193,10 @@ impl Node {
                     || (!n.async_send && n.branches.len() != 2)
                 {
                     Self::err(f, t, &n.node_name, "Branch information is incorrect")
+                } else if n.content.is_empty() {
+                    Self::err(f, t, &n.node_name, "need to fill in the email content")
                 } else {
-                    if n.content.is_empty() {
-                        Self::err(f, t, &n.node_name, "need to fill in the email content")
-                    } else {
-                        Ok(())
-                    }
+                    Ok(())
                 }
             }
             Node::EndNode(n) => {

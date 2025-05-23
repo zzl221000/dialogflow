@@ -65,7 +65,7 @@ impl LoadedHuggingFaceModel {
                 LoadedHuggingFaceModel::Phi3(load_phi3_model_files(&info)?)
             }
             HuggingFaceModelType::Bert => {
-                LoadedHuggingFaceModel::Bert(load_bert_model_files(&info.repository)?)
+                LoadedHuggingFaceModel::Bert(load_bert_model_files(info.repository)?)
             }
         };
         Ok(m)
@@ -166,7 +166,7 @@ impl HuggingFaceModelInfo {
                         } else {
                             p.push_str(&i.role);
                         }
-                        p.push_str("\n");
+                        p.push('\n');
                         p.push_str(&i.content);
                         p.push_str("<end_of_turn>\n");
                     }
@@ -333,7 +333,7 @@ impl HuggingFaceModel {
                         if f.eq("model.safetensors") {
                             break;
                         }
-                        idx = idx + 1;
+                        idx += 1;
                     }
                     v.remove(idx);
                     v
@@ -362,7 +362,7 @@ impl HuggingFaceModel {
                         if f.eq("model.safetensors") {
                             break;
                         }
-                        idx = idx + 1;
+                        idx += 1;
                     }
                     v.remove(idx);
                     v
@@ -382,7 +382,7 @@ impl HuggingFaceModel {
                         if f.eq("model.safetensors") {
                             break;
                         }
-                        idx = idx + 1;
+                        idx += 1;
                     }
                     v.remove(idx);
                     v
@@ -411,7 +411,7 @@ impl HuggingFaceModel {
                         if f.eq("model.safetensors") {
                             break;
                         }
-                        idx = idx + 1;
+                        idx += 1;
                     }
                     v.remove(idx);
                     v
@@ -557,13 +557,13 @@ pub(crate) async fn download_hf_models(
         .collect::<Vec<_>>();
     let mut r: Result<_> = Ok(());
     if !info.model_index_file.is_empty() {
-        let model_index_file = construct_model_file_path(&info.mirror, &info.model_index_file);
+        let model_index_file = construct_model_file_path(&info.mirror, info.model_index_file);
         let path = std::path::Path::new(&model_index_file);
         if !path.exists() {
-            r = download_hf_file(&client, info, &root_path, &info.model_index_file).await;
+            r = download_hf_file(&client, info, &root_path, info.model_index_file).await;
         }
         if r.is_ok() {
-            let f = load_safetensors(&info.mirror, &info.model_index_file)?;
+            let f = load_safetensors(info.mirror, info.model_index_file)?;
             files.extend_from_slice(&f);
         }
     };
@@ -677,7 +677,7 @@ pub(crate) fn check_model_files(info: &HuggingFaceModelInfo) -> Result<()> {
     //     return Ok(false)
     // }
     // if arch.as_str().unwrap().starts_with("Bert") {
-    let files = get_model_files(&info)?;
+    let files = get_model_files(info)?;
     for f in files.iter() {
         let p = Path::new(f);
         if !p.exists() {
@@ -703,12 +703,12 @@ pub(crate) fn check_model_files(info: &HuggingFaceModelInfo) -> Result<()> {
                 .read(true)
                 .write(false)
                 .create(false)
-                .open(&f)?;
+                .open(f)?;
             let mut bytes = Vec::with_capacity(4096);
             file.read_to_end(&mut bytes)?;
             let _: serde::de::IgnoredAny = serde_json::from_slice(&bytes)?;
         } else if ext.eq("safetensors") {
-            let metadata = std::fs::metadata(&p)?;
+            let metadata = std::fs::metadata(p)?;
             if metadata.len() < 62914560u64 {
                 return Err(Error::ErrorWithMessage(format!(
                     "{:?} file size is too small.",
@@ -892,26 +892,26 @@ pub(crate) fn load_phi3_model_files(
     } else {
         DType::F32
     };
-    let filenames = load_safetensors(&info.mirror, &info.model_index_file)?
+    let filenames = load_safetensors(info.mirror, info.model_index_file)?
         .iter()
-        .map(|v| std::path::PathBuf::from(construct_model_file_path(&info.mirror, v)))
+        .map(|v| std::path::PathBuf::from(construct_model_file_path(info.mirror, v)))
         .collect::<Vec<_>>();
     let vb = unsafe { VarBuilder::from_mmaped_safetensors(&filenames, dtype, &device)? };
-    let config_filename = construct_model_file_path(&info.mirror, "config.json");
+    let config_filename = construct_model_file_path(info.mirror, "config.json");
     let config = std::fs::read_to_string(config_filename)?;
     let config: Phi3Config = serde_json::from_str(&config)?;
     let phi3 = Phi3::new(&config, vb)?;
-    let tokenizer = init_tokenizer(&info.repository)?;
+    let tokenizer = init_tokenizer(info.repository)?;
     Ok((device, phi3, tokenizer))
 }
 
 fn get_model_files(info: &HuggingFaceModelInfo) -> Result<Vec<String>> {
     let f = if info.model_index_file.is_empty() {
-        vec![construct_model_file_path(&info.mirror, "model.safetensors")]
+        vec![construct_model_file_path(info.mirror, "model.safetensors")]
     } else {
-        load_safetensors(&info.repository, &info.model_index_file)?
+        load_safetensors(info.repository, info.model_index_file)?
             .iter()
-            .map(|v| construct_model_file_path(&info.mirror, v))
+            .map(|v| construct_model_file_path(info.mirror, v))
             .collect::<Vec<_>>()
     };
     Ok(f)
@@ -921,10 +921,10 @@ pub(crate) fn load_llama_model_files(
     info: &HuggingFaceModelInfo,
 ) -> Result<(Device, Llama, LlamaCache, Tokenizer, Option<LlamaEosToks>)> {
     log::info!("load_llama_model_files start");
-    let tokenizer = init_tokenizer(&info.repository)?;
+    let tokenizer = init_tokenizer(info.repository)?;
     let device = device()?;
 
-    let config_filename = construct_model_file_path(&info.repository, "config.json");
+    let config_filename = construct_model_file_path(info.repository, "config.json");
     let config: LlamaConfig = serde_json::from_slice(&std::fs::read(config_filename)?)?;
     let config = config.into_config(device.is_cuda());
     let dtype = DType::F16;
@@ -942,10 +942,10 @@ pub(crate) fn load_llama_model_files(
 pub(crate) fn load_gemma_model_files(
     info: &HuggingFaceModelInfo,
 ) -> Result<(Device, GemmaModel, Tokenizer)> {
-    let tokenizer = init_tokenizer(&info.repository)?;
+    let tokenizer = init_tokenizer(info.repository)?;
     let device = device()?;
 
-    let config_filename = construct_model_file_path(&info.repository, "config.json");
+    let config_filename = construct_model_file_path(info.repository, "config.json");
     let config: GemmaConfig = serde_json::from_reader(std::fs::File::open(config_filename)?)?;
     let dtype = if device.is_cuda() {
         DType::BF16
@@ -961,18 +961,18 @@ pub(crate) fn load_gemma_model_files(
 pub(crate) fn load_parler_tts_model_files(
     info: &HuggingFaceModelInfo,
 ) -> Result<(Device, ParlerTtsModel, Tokenizer)> {
-    let tokenizer = init_tokenizer(&info.repository)?;
+    let tokenizer = init_tokenizer(info.repository)?;
     let device = device()?;
     let filenames = get_model_files(info)?;
     let vb = unsafe { VarBuilder::from_mmaped_safetensors(&filenames, DType::F32, &device)? };
-    let config_filename = construct_model_file_path(&info.repository, "config.json");
+    let config_filename = construct_model_file_path(info.repository, "config.json");
     let config: ParlerTtsConfig = serde_json::from_reader(std::fs::File::open(config_filename)?)?;
     let model = ParlerTtsModel::new(&config, vb)?;
     Ok((device, model, tokenizer))
 }
 
 pub(crate) fn load_pytorch_mode_files(info: &HuggingFaceModelInfo, device: &Device) -> Result<()> {
-    let weights_filename = construct_model_file_path(&info.repository, "pytorch_model.bin");
+    let weights_filename = construct_model_file_path(info.repository, "pytorch_model.bin");
     let vb = VarBuilder::from_pth(&weights_filename, DType::BF16, device)?;
     Ok(())
 }
