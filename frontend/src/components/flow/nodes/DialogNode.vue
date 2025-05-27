@@ -317,7 +317,13 @@ export default defineComponent({
             return this.$refs.nodeAnswer.offsetWidth
         },
         setPreview() {
-            let p = this.nodeData.dialogText.replace(/<[^>]+>/g, '').replace(/\r/g, '');
+            let t = '';
+            if (this.nodeData.dialogTextSource && this.nodeData.dialogTextSource === 'FixedText') {
+                t = this.nodeData.dialogText;
+            } else if (this.nodeData.dialogTextSource && this.nodeData.dialogTextSource === 'LlmGenText') {
+                t = this.nodeData.dialogLlmGenPrompt;
+            }
+            let p = t.replace(/<[^>]+>/g, '').replace(/\r/g, '');
             if (p) {
                 const array = p.split('\n');
                 // console.log(array.splice(3, array.length - 3))
