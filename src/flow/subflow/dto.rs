@@ -88,8 +88,14 @@ impl Node {
                     Self::err(f, t, &n.node_name, "verification failed")
                 } else if n.node_name.is_empty() {
                     Self::err(f, t, &n.node_name, "node name not filled in")
-                } else if n.dialog_text.is_empty() {
+                } else if n.dialog_text_source == DialogTextSource::FixedText
+                    && n.dialog_text.is_empty()
+                {
                     Self::err(f, t, &n.node_name, "No dialog text filled in")
+                } else if n.dialog_text_source == DialogTextSource::LlmGenText
+                    && n.dialog_llm_gen_prompt.is_empty()
+                {
+                    Self::err(f, t, &n.node_name, "No prompt filled in")
                 } else if n.branches.len() != 1 {
                     Self::err(f, t, &n.node_name, "Branch information is incorrect")
                 } else {
@@ -340,7 +346,7 @@ pub(crate) struct BranchCondition {
     pub(crate) case_sensitive_comparison: bool,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, PartialEq)]
 pub(crate) enum DialogTextSource {
     FixedText,
     LlmGenText,

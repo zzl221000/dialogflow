@@ -79,7 +79,10 @@ pub(in crate::flow::rt) fn exec(
 ) -> Result<(ResponseData, Option<tokio::sync::mpsc::Receiver<String>>)> {
     // let now = std::time::Instant::now();
     let mut response = ResponseData::new(req);
-    let mut sender_wapper = ResponseSenderWrapper { receiver: None };
+    let mut sender_wapper = ResponseSenderWrapper {
+        sender: None,
+        receiver: None,
+    };
     for _i in 0..100 {
         // let now = std::time::Instant::now();
         if let Some(mut n) = ctx.pop_node() {

@@ -135,15 +135,21 @@ impl RuntimeNode for TextNode {
         req: &Request,
         ctx: &mut Context,
         response: &mut ResponseData,
-        _channel_sender: &mut ResponseSenderWrapper,
+        channel_sender: &mut ResponseSenderWrapper,
     ) -> bool {
-        // log::info!("Into TextNode");
+        log::info!("Into TextNode {}", &self.text);
         // let now = std::time::Instant::now();
         match replace_vars(&self.text, req, ctx) {
-            Ok(answer) => response.answers.push(AnswerData {
-                content: answer,
-                content_type: self.text_type.clone(),
-            }),
+            Ok(answer) => {
+                if let Some(sender) = channel_sender.sender.take() {
+                    crate::sse_send!(sender, answer);
+                } else {
+                    response.answers.push(AnswerData {
+                        content: answer,
+                        content_type: self.text_type.clone(),
+                    })
+                }
+            }
             Err(e) => log::error!("{:?}", e),
         };
         // log::info!("add {}", &self.next_node_id);
@@ -209,8 +215,12 @@ impl RuntimeNode for LlmGenTextNode {
             let connect_timeout = self.connect_timeout;
             let read_timeout = self.read_timeout;
             // let (s, r) = tokio::sync::mpsc::channel::<String>(1);
-            let (s, r) = tokio::sync::mpsc::channel::<String>(2);
-            channel_sender.receiver = Some(r);
+            if channel_sender.sender.is_none() {
+                let (s, r) = tokio::sync::mpsc::channel::<String>(2);
+                channel_sender.sender = Some(s);
+                channel_sender.receiver = Some(r);
+            }
+            let s = channel_sender.sender.clone().unwrap();
             tokio::task::spawn(async move {
                 if let Err(e) = crate::ai::chat::chat(
                     &robot_id,
@@ -689,8 +699,12 @@ impl LlmChatNode {
             let connect_timeout = self.connect_timeout;
             let read_timeout = self.read_timeout;
             // let (s, r) = tokio::sync::mpsc::channel::<String>(1);
-            let (s, r) = tokio::sync::mpsc::channel::<String>(2);
-            channel_sender.receiver = Some(r);
+            if channel_sender.sender.is_none() {
+                let (s, r) = tokio::sync::mpsc::channel::<String>(2);
+                channel_sender.sender = Some(s);
+                channel_sender.receiver = Some(r);
+            }
+            let s = channel_sender.sender.clone().unwrap();
             tokio::task::spawn(async move {
                 if let Err(e) = crate::ai::chat::chat(
                     &robot_id,

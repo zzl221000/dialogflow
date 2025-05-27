@@ -50,6 +50,7 @@ pub(crate) struct AnswerData {
 }
 
 pub(crate) struct ResponseSenderWrapper {
+    pub(crate) sender: Option<tokio::sync::mpsc::Sender<String>>,
     pub(crate) receiver: Option<tokio::sync::mpsc::Receiver<String>>,
 }
 
