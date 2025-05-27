@@ -4,7 +4,8 @@ use std::vec::Vec;
 use super::condition::ConditionData;
 use super::node::{
     CollectNode, ConditionNode, ExternalHttpCallNode, GotoAnotherNode, GotoMainFlowNode,
-    KnowledgeBaseAnswerNode, LlmChatNode, RuntimeNnodeEnum, SendEmailNode, TerminateNode, TextNode,
+    KnowledgeBaseAnswerNode, LlmChatNode, LlmGenTextNode, RuntimeNnodeEnum, SendEmailNode,
+    TerminateNode, TextNode,
 };
 use crate::db;
 use crate::db_executor;
@@ -154,18 +155,37 @@ fn convert_node(main_flow_id: &str, node: &mut Node) -> Result<()> {
     let mut nodes: Vec<(String, rkyv::util::AlignedVec)> = Vec::with_capacity(32);
     match node {
         Node::DialogNode(n) => {
-            let node = TextNode {
-                text: n.dialog_text.clone(),
-                text_type: n.dialog_text_type.clone(),
-                ret: NextActionType::WaitUserResponse == n.next_step,
-                next_node_id: n.branches[0].target_node_id.clone(),
-            };
-            // println!("Dialog {} {}", &n.node_id, &node.next_node_id);
-            let r = RuntimeNnodeEnum::TextNode(node);
-            let bytes = rkyv::to_bytes::<rkyv::rancor::Error>(&r).unwrap();
-            // let mut bytes = rkyv::to_bytes::<_, 256>(&node).unwrap();
-            // bytes.push(RuntimeNodeTypeId::TextNode as u8);
-            nodes.push((n.node_id.clone(), bytes));
+            match n.dialog_text_source {
+                crate::flow::subflow::dto::DialogTextSource::FixedText => {
+                    let node = TextNode {
+                        text: std::mem::take(&mut n.dialog_text),
+                        text_type: n.dialog_text_type.clone(),
+                        ret: NextActionType::WaitUserResponse == n.next_step,
+                        next_node_id: n.branches[0].target_node_id.clone(),
+                    };
+                    // println!("Dialog {} {}", &n.node_id, &node.next_node_id);
+                    let r = RuntimeNnodeEnum::TextNode(node);
+                    let bytes = rkyv::to_bytes::<rkyv::rancor::Error>(&r).unwrap();
+                    // let mut bytes = rkyv::to_bytes::<_, 256>(&node).unwrap();
+                    // bytes.push(RuntimeNodeTypeId::TextNode as u8);
+                    nodes.push((n.node_id.clone(), bytes));
+                }
+                crate::flow::subflow::dto::DialogTextSource::LlmGenText => {
+                    let node = LlmGenTextNode {
+                        prompt: std::mem::take(&mut n.dialog_llm_gen_prompt),
+                        fallback_text: std::mem::take(&mut n.dialog_fallback_text),
+                        context_len: n.context_length,
+                        connect_timeout: n.connect_timeout,
+                        read_timeout: n.read_timeout,
+                        response_streaming: n.response_streaming,
+                        ret: NextActionType::WaitUserResponse == n.next_step,
+                        next_node_id: n.branches[0].target_node_id.clone(),
+                    };
+                    let r = RuntimeNnodeEnum::LlmGenTextNode(node);
+                    let bytes = rkyv::to_bytes::<rkyv::rancor::Error>(&r).unwrap();
+                    nodes.push((n.node_id.clone(), bytes));
+                }
+            }
         }
         Node::LlmChatNode(n) => {
             let node = LlmChatNode {

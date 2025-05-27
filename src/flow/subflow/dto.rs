@@ -341,16 +341,36 @@ pub(crate) struct BranchCondition {
 }
 
 #[derive(Deserialize)]
+pub(crate) enum DialogTextSource {
+    FixedText,
+    LlmGenText,
+}
+
+#[derive(Deserialize)]
 pub(crate) struct DialogNode {
     pub(crate) valid: bool,
     #[serde(rename = "nodeId")]
     pub(crate) node_id: String,
     #[serde(rename = "nodeName")]
     pub(crate) node_name: String,
+    #[serde(rename = "dialogTextSource")]
+    pub(crate) dialog_text_source: DialogTextSource,
     #[serde(rename = "dialogText")]
     pub(crate) dialog_text: String,
     #[serde(rename = "dialogTextType")]
     pub(crate) dialog_text_type: crate::flow::rt::dto::AnswerContentType,
+    #[serde(rename = "dialogLlmGenPrompt")]
+    pub(crate) dialog_llm_gen_prompt: String,
+    #[serde(rename = "dialogFallbackText")]
+    pub(crate) dialog_fallback_text: String,
+    #[serde(rename = "contextLength")]
+    pub(crate) context_length: u8,
+    #[serde(rename = "connectTimeout")]
+    pub(crate) connect_timeout: Option<u32>,
+    #[serde(rename = "readTimeout")]
+    pub(crate) read_timeout: Option<u32>,
+    #[serde(rename = "responseStreaming")]
+    pub(crate) response_streaming: bool,
     #[serde(rename = "nextStep")]
     pub(crate) next_step: NextActionType,
     pub(crate) branches: Vec<Branch>,

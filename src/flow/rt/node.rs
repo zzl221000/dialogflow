@@ -11,6 +11,7 @@ use super::dto::{
     AnswerContentType, AnswerData, CollectData, Request, ResponseData, ResponseSenderWrapper,
 };
 use crate::ai::chat::ResultSender;
+use crate::ai::completion::Prompt;
 use crate::external::http::client as http;
 use crate::flow::rt::collector;
 use crate::flow::subflow::dto::NextActionType;
@@ -36,6 +37,7 @@ const VAR_WRAP_SYMBOL: char = '`';
 #[rkyv(compare(PartialEq))]
 pub(crate) enum RuntimeNnodeEnum {
     TextNode,
+    LlmGenTextNode,
     ConditionNode,
     GotoAnotherNode,
     GotoMainFlowNode,
@@ -147,6 +149,157 @@ impl RuntimeNode for TextNode {
         // log::info!("add {}", &self.next_node_id);
         add_next_node(ctx, &self.next_node_id);
         // log::info!("TextNode used time:{:?}", now.elapsed());
+        self.ret
+    }
+}
+
+#[derive(Archive, Deserialize, Serialize)]
+#[rkyv(compare(PartialEq))]
+pub(crate) struct LlmGenTextNode {
+    pub(super) prompt: String,
+    pub(crate) fallback_text: String,
+    pub(super) context_len: u8,
+    pub(crate) connect_timeout: Option<u32>,
+    pub(crate) read_timeout: Option<u32>,
+    pub(crate) response_streaming: bool,
+    pub(super) ret: bool,
+    pub(super) next_node_id: String,
+}
+
+impl RuntimeNode for LlmGenTextNode {
+    fn exec(
+        &mut self,
+        req: &Request,
+        ctx: &mut Context,
+        response: &mut ResponseData,
+        channel_sender: &mut ResponseSenderWrapper,
+    ) -> bool {
+        // log::info!("Into LlmGenTextNode");
+        // let now = std::time::Instant::now();
+        let mut chat_history: Vec<Prompt> = Vec::with_capacity(5);
+        if self.context_len > 0 && !ctx.chat_history.is_empty() {
+            let len = ctx.chat_history.len();
+            let context_len = self.context_len as usize;
+            if len > context_len {
+                // ctx.chat_history.drain(0..ctx.chat_history.len() - self.context_len as usize);
+                chat_history.extend_from_slice(&ctx.chat_history[len - context_len..len - 1]);
+            } else {
+                chat_history.extend_from_slice(&ctx.chat_history);
+            };
+        };
+        let p = Prompt {
+            role: "system".to_string(),
+            content: self.prompt.clone(),
+        };
+        chat_history.push(p);
+        if self.response_streaming {
+            // let r = super::facade::get_sender(req.session_id.as_ref().unwrap());
+            // if r.is_err() {
+            //     add_next_node(ctx, &self.next_node_id);
+            //     return false;
+            // }
+            // let s_op = r.unwrap();
+            // if s_op.is_none() {
+            //     add_next_node(ctx, &self.next_node_id);
+            //     return false;
+            // }
+            // let s = s_op.unwrap();
+            // let ticket = String::new();
+            let robot_id = req.robot_id.clone();
+            let connect_timeout = self.connect_timeout;
+            let read_timeout = self.read_timeout;
+            // let (s, r) = tokio::sync::mpsc::channel::<String>(1);
+            let (s, r) = tokio::sync::mpsc::channel::<String>(2);
+            channel_sender.receiver = Some(r);
+            tokio::task::spawn(async move {
+                if let Err(e) = crate::ai::chat::chat(
+                    &robot_id,
+                    Some(chat_history),
+                    connect_timeout,
+                    read_timeout,
+                    ResultSender::ChannelSender(&s),
+                )
+                .await
+                {
+                    log::info!("LlmGenTextNode response failed, err: {:?}", &e);
+                }
+            });
+        } else {
+            let now = std::time::Instant::now();
+            let mut s = String::with_capacity(1024);
+            if let Err(e) = tokio::task::block_in_place(|| {
+                // log::info!("prompt |{}|", &self.prompt);
+                tokio::task::block_in_place(|| {
+                    tokio::runtime::Handle::current().block_on(crate::ai::chat::chat(
+                        &req.robot_id,
+                        Some(chat_history),
+                        self.connect_timeout,
+                        self.read_timeout,
+                        ResultSender::StrBuf(&mut s),
+                    ))
+                })
+            }) {
+                log::error!("LlmGenTextNode response failed, err: {:?}", &e);
+                s.push_str(&self.fallback_text);
+            } else {
+                log::info!("LLM response |{}|", &s);
+                if s.is_empty() {
+                    response.answers.push(AnswerData {
+                        content: self.fallback_text.clone(),
+                        content_type: AnswerContentType::TextPlain,
+                    });
+                } else {
+                    response.answers.push(AnswerData {
+                        content: s,
+                        content_type: AnswerContentType::TextPlain,
+                    });
+                }
+            }
+            log::info!("LLM response took {:?}", now.elapsed());
+            // let (s, rev) = std::sync::mpsc::channel::<String>();
+            // let robot_id = req.robot_id.clone();
+            // let prompt = self.prompt.clone();
+            // tokio::task::spawn(async move {
+            //     let mut r = String::with_capacity(1024);
+            //     if let Err(e) =
+            //         crate::ai::chat::chat(&robot_id, &prompt, ResultReceiver::StrBuf(&mut r)).await
+            //     {
+            //         log::info!("LlmChatNode response failed, err: {:?}", &e);
+            //         drop(s);
+            //         return;
+            //     }
+            //     if let Err(_) = s.send(r) {
+            //         log::info!("LlmChatNode sent response failed.");
+            //     }
+            // });
+            // match rev.recv() {
+            //     Ok(s) => {
+            //         log::info!("LLM response {}", &s);
+            //         response.answers.push(AnswerData {
+            //             text: s,
+            //             answer_type: AnswerType::TextPlain,
+            //         });
+            //     }
+            //     // Err(tokio::sync::oneshot::error::TryRecvError::Closed) => {}
+            //     Err(e) => log::info!("LlmChatNode response failed, err: {:?}", &e),
+            // }
+            // let mut s = String::with_capacity(1024);
+            // if let Err(e) = tokio::runtime::Handle::current().block_on(async {
+            //     crate::ai::chat::chat(&req.robot_id, &self.prompt, ResultReceiver::StrBuf(&mut s))
+            //         .await
+            // }) {
+            //     log::info!("LlmChatNode response failed, err: {:?}", &e);
+            // } else {
+            //     log::info!("LLM response {}", &s);
+            //     response.answers.push(AnswerData {
+            //         text: s,
+            //         answer_type: AnswerType::TextPlain,
+            //     });
+            // }
+        }
+        // log::info!("add {}", &self.next_node_id);
+        add_next_node(ctx, &self.next_node_id);
+        // log::info!("LlmGenTextNode used time:{:?}", now.elapsed());
         self.ret
     }
 }
