@@ -86,7 +86,7 @@ export default defineComponent({
                 responseStreaming: false,
                 connectTimeout: -1,
                 readTimeout: -1,
-                contextLength: 0,
+                contextLength: 5,
                 valid: false,
                 invalidMessages: [],
                 newNode: true,

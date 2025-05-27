@@ -10,7 +10,7 @@ const nodeData = reactive({
     prompt: '',
     promptText: '',
     nodeExitType: 'exitByIntent',
-    contextLength: 0,
+    contextLength: 5,
     exitCondition: { "": "" },
     exitIntent: '',
     exitSpecialInputs: '',
