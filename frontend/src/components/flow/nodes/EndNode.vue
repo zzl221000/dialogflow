@@ -15,13 +15,14 @@ const nodeData = reactive({
 const nodeName = ref();
 const getNode = inject('getNode');
 const node = getNode();
-node.setData(nodeData, { silent: false });
+// node.setData(nodeData, { silent: false });
 node.on("change:data", ({ current }) => {
     nodeSetFormVisible.value = true;
 });
 onMounted(async () => {
     // const node = getNode();
     const data = node.getData();
+    // console.log(data);
     copyProperties(data, nodeData);
     if (nodeData.newNode) {
         nodeData.nodeName += data.nodeCnt.toString();
