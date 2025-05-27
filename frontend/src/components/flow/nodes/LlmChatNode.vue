@@ -10,7 +10,7 @@ const nodeData = reactive({
     prompt: '',
     promptText: '',
     nodeExitType: 'exitByIntent',
-    contextLength: 5,
+    contextLength: 0,
     exitCondition: { "": "" },
     exitIntent: '',
     exitSpecialInputs: '',
@@ -252,7 +252,7 @@ const hideForm = () => {
                 </el-form-item> -->
                 <el-form-item label="Context length" :label-width="formLabelWidth">
                     <el-input-number v-model="nodeData.contextLength" :min="0" :max="50" :step="5" />
-                    How many chat history records will be added in prompt.
+                    How many chat history records will be added.
                 </el-form-item>
                 <el-form-item label="Exit condition" :label-width="formLabelWidth">
                     <el-radio-group v-model="nodeData.nodeExitType">

@@ -73,17 +73,25 @@ export default defineComponent({
             formLabelWidth: '100px',
             vars: [],
             selectedVar: '',
+            overrideTimeoutEnabled: false,
             nodeData: {
                 nodeName: this.t('lang.dialogNode.nodeName'),
                 dialogText: '',
                 dialogTextType: '',
-                textFromLLM: false,
+                dialogTextSource: 'FixedText',
+                dialogLlmGenPrompt: '',
+                dialogFallbackText: '',
                 branches: [],
                 nextStep: 'WaitUserResponse',
+                responseStreaming: false,
+                connectTimeout: -1,
+                readTimeout: -1,
+                contextLength: 0,
                 valid: false,
                 invalidMessages: [],
                 newNode: true,
             },
+            settings: {},
             nextSteps: [{ label: this.tm('lang.dialogNode.nextSteps')[0], value: 'WaitUserResponse' }, { label: this.tm('lang.dialogNode.nextSteps')[1], value: 'GotoNextNode' }],
             loading: false,
             lastEditRange: null,
@@ -247,6 +255,19 @@ export default defineComponent({
             });
             this.$emit('update:modelValue', this.nodeData.dialogText)
         }
+        httpReq("GET", 'management/settings', { robotId: this.robotId }, null, null).then((res) => {
+            // const r = res.json();
+            if (res.data) {
+                copyProperties(res.data, this.settings);
+                // updateBrief();
+                // if (this.nodeData.connectTimeout > 0 && this.nodeData.readTimeout > 0)
+                //     this.overrideTimeoutEnabled = true;
+                if (this.nodeData.connectTimeout < 100)
+                    this.nodeData.connectTimeout = this.settings.chatProvider.connectTimeoutMillis;
+                if (this.nodeData.readTimeout < 200)
+                    this.nodeData.readTimeout = this.settings.chatProvider.readTimeoutMillis;
+            }
+        })
     },
     beforeUnmount() {
         if (this.editor)
@@ -264,10 +285,21 @@ export default defineComponent({
             m.splice(0, m.length);
             if (!d.nodeName)
                 m.push(this.tm('lang.dialogNode.errors')[0]);
-            if (d.dialogText.length < 1)
-                m.push(this.tm('lang.dialogNode.errors')[1]);
-            if (d.dialogText.length > 200)
-                m.push(this.tm('lang.dialogNode.errors')[2]);
+            if (d.dialogTextSource && d.dialogTextSource === 'FixedText') {
+                if (!d.dialogText || d.dialogText.length < 1)
+                    m.push(this.tm('lang.dialogNode.errors')[1]);
+                else if (d.dialogText.length > 5000)
+                    m.push(this.tm('lang.dialogNode.errors')[2]);
+            } else if (d.dialogTextSource && d.dialogTextSource === 'LlmGenText') {
+                if (!d.dialogLlmGenPrompt || d.dialogLlmGenPrompt.length < 1)
+                    m.push('Input prompt');
+                else if (d.dialogLlmGenPrompt.length > 5000)
+                    m.push('The prompt is too long.');
+                if (!d.dialogFallbackText || d.dialogFallbackText.length < 1)
+                    m.push('Input fallback text');
+                else if (d.dialogFallbackText.length > 500)
+                    m.push('The fallback text is too long');
+            } else m.push('Unknown text source');
             d.valid = m.length == 0;
         },
         getTextWidth() {
@@ -440,8 +472,8 @@ export default defineComponent({
             this.textGenerating = true;
             this.genTextBtnText = 'Generating';
             this.generatedText = '';
-            // const u = window.location.protocol + '//' + window.location.host + '/ai/text/generation';
-            const u = 'http://localhost:12715/ai/text/generation';
+            const u = window.location.protocol + '//' + window.location.host + '/ai/text/generation';
+            // const u = 'http://localhost:12715/ai/text/generation';
             const response = await fetch(u, {
                 method: 'POST',
                 headers: {
@@ -655,11 +687,20 @@ watch(this.nodeData.dialogText, async (newT, oldT) => {
                 ]">
                     <el-input v-model="nodeData.nodeName" autocomplete="off" />
                 </el-form-item>
-                <!-- <el-form-item label="Text from" :label-width="formLabelWidth">
-                    <el-switch v-model="nodeData.textFromLLM" class="mb-2" active-text="LLM" inactive-text="Fixed text"
-                        style="--el-switch-off-color: #13ce66" />
-                </el-form-item> -->
-                <el-form-item :label="t('lang.dialogNode.form.label')" :label-width="formLabelWidth">
+                <el-form-item label="" :label-width="formLabelWidth">
+                    <!-- <el-switch v-model="nodeData.textFromLLM" class="mb-2" active-text="LLM" inactive-text="Fixed text"
+                        style="--el-switch-off-color: #13ce66" /> -->
+                    <el-radio-group v-model="nodeData.dialogTextSource">
+                        <el-radio value="FixedText">Fixed text</el-radio>
+                        <el-radio value="LlmGenText">Large model generates text</el-radio>
+                    </el-radio-group>
+                </el-form-item>
+                <!-- <el-tabs v-model="activeName" class="demo-tabs" @tab-click="handleClick">
+                    <el-tab-pane label="Fixed text" name="first">User</el-tab-pane>
+                    <el-tab-pane label="Large model generates text" name="second">Config</el-tab-pane>
+                </el-tabs> -->
+                <el-form-item v-show="nodeData.dialogTextSource == 'FixedText'" :label="t('lang.dialogNode.form.label')"
+                    :label-width="formLabelWidth">
                     <!-- <el-radio-group v-model="textEditor" class="ml-4" @change="changeEditorNote">
                             <el-radio value="1">Plain text</el-radio>
                             <el-radio value="2">Rich text</el-radio>
@@ -773,7 +814,7 @@ watch(this.nodeData.dialogText, async (newT, oldT) => {
                     <editor-content :editor="editor" style="width:100%; border: #e5e9f2 1px solid;"
                         v-if="editor && robotType == 'TextBot'" v-model="nodeData.dialogText" />
                 </el-form-item>
-                <el-form-item label="" :label-width="formLabelWidth">
+                <el-form-item v-show="nodeData.dialogTextSource == 'FixedText'" label="" :label-width="formLabelWidth">
                     <el-button @click="showVarsForm">
                         <el-icon>
                             <EpPlus />
@@ -783,6 +824,42 @@ watch(this.nodeData.dialogText, async (newT, oldT) => {
                     <el-button @click="genTextVisible = true">
                         Generate text from LLM
                     </el-button>
+                </el-form-item>
+                <el-form-item v-show="nodeData.dialogTextSource == 'LlmGenText'" label="Prompt"
+                    :label-width="formLabelWidth">
+                    <el-input v-model="nodeData.dialogLlmGenPrompt" :rows="5" type="textarea"
+                        placeholder="Tell the large model how to respond" />
+                </el-form-item>
+                <el-form-item v-show="nodeData.dialogTextSource == 'LlmGenText'" label="Fallback text"
+                    :label-width="formLabelWidth">
+                    <el-input v-model="nodeData.dialogFallbackText" :rows="2" type="textarea"
+                        placeholder="What should be replied when the call times out?" />
+                </el-form-item>
+                <el-form-item v-show="nodeData.dialogTextSource == 'LlmGenText'" label="Timeout"
+                    :label-width="formLabelWidth">
+                    <el-checkbox label="Override timeout of settings" v-model="overrideTimeoutEnabled" />
+                    <el-divider direction="vertical" />
+                    Global settings are: [Connect: {{ settings.chatProvider?.connectTimeoutMillis }} millis, Read: {{
+                        settings.chatProvider?.readTimeoutMillis }} mills]
+                </el-form-item>
+                <el-form-item v-show="nodeData.dialogTextSource == 'LlmGenText'" label="Connection"
+                    :label-width="formLabelWidth">
+                    <el-input-number v-model="nodeData.connectTimeout" :min="100" :max="65500"
+                        :disabled="!overrideTimeoutEnabled" />
+                </el-form-item>
+                <el-form-item v-show="nodeData.dialogTextSource == 'LlmGenText'" label="Read"
+                    :label-width="formLabelWidth">
+                    <el-input-number v-model="nodeData.readTimeout" :min="200" :max="65500"
+                        :disabled="!overrideTimeoutEnabled" />
+                </el-form-item>
+                <el-form-item v-show="nodeData.dialogTextSource == 'LlmGenText'" label="History"
+                    :label-width="formLabelWidth">
+                    <el-input-number v-model="nodeData.contextLength" :min="0" :max="50" :step="5" />
+                    How many chat history records will be added.
+                </el-form-item>
+                <el-form-item v-show="nodeData.dialogTextSource == 'LlmGenText'" label="Streaming"
+                    :label-width="formLabelWidth">
+                    <el-checkbox v-model="nodeData.responseStreaming" label="Response streaming" />
                 </el-form-item>
                 <el-form-item :label="t('lang.dialogNode.form.nextStep')" :label-width="formLabelWidth">
                     <el-select v-model="nodeData.nextStep" :placeholder="t('lang.dialogNode.form.choose')">
