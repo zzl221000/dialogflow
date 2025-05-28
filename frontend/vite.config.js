@@ -100,7 +100,7 @@ export default ({ command, mode }) => {
     define: {
       // 'process.env': env,
     },
-    bulid: {
+    build: {
       rollupOptions: {
         output: {
           // dir: 'dist',
