@@ -88,8 +88,14 @@ impl Node {
                     Self::err(f, t, &n.node_name, "verification failed")
                 } else if n.node_name.is_empty() {
                     Self::err(f, t, &n.node_name, "node name not filled in")
-                } else if n.dialog_text.is_empty() {
+                } else if n.dialog_text_source == DialogTextSource::FixedText
+                    && n.dialog_text.is_empty()
+                {
                     Self::err(f, t, &n.node_name, "No dialog text filled in")
+                } else if n.dialog_text_source == DialogTextSource::LlmGenText
+                    && n.dialog_llm_gen_prompt.is_empty()
+                {
+                    Self::err(f, t, &n.node_name, "No prompt filled in")
                 } else if n.branches.len() != 1 {
                     Self::err(f, t, &n.node_name, "Branch information is incorrect")
                 } else {
@@ -340,6 +346,12 @@ pub(crate) struct BranchCondition {
     pub(crate) case_sensitive_comparison: bool,
 }
 
+#[derive(Deserialize, PartialEq)]
+pub(crate) enum DialogTextSource {
+    FixedText,
+    LlmGenText,
+}
+
 #[derive(Deserialize)]
 pub(crate) struct DialogNode {
     pub(crate) valid: bool,
@@ -347,10 +359,24 @@ pub(crate) struct DialogNode {
     pub(crate) node_id: String,
     #[serde(rename = "nodeName")]
     pub(crate) node_name: String,
+    #[serde(rename = "dialogTextSource")]
+    pub(crate) dialog_text_source: DialogTextSource,
     #[serde(rename = "dialogText")]
     pub(crate) dialog_text: String,
     #[serde(rename = "dialogTextType")]
     pub(crate) dialog_text_type: crate::flow::rt::dto::AnswerContentType,
+    #[serde(rename = "dialogLlmGenPrompt")]
+    pub(crate) dialog_llm_gen_prompt: String,
+    #[serde(rename = "dialogFallbackText")]
+    pub(crate) dialog_fallback_text: String,
+    #[serde(rename = "contextLength")]
+    pub(crate) context_length: u8,
+    #[serde(rename = "connectTimeout")]
+    pub(crate) connect_timeout: Option<u32>,
+    #[serde(rename = "readTimeout")]
+    pub(crate) read_timeout: Option<u32>,
+    #[serde(rename = "responseStreaming")]
+    pub(crate) response_streaming: bool,
     #[serde(rename = "nextStep")]
     pub(crate) next_step: NextActionType,
     pub(crate) branches: Vec<Branch>,
