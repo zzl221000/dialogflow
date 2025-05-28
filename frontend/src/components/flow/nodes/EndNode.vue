@@ -87,9 +87,9 @@ const formLabelWidth = '90px'
         </div>
         <div ref="nodeAnswer" style="white-space: pre-wrap;font-size:12px;">{{ nodeData.endingText }}</div>
         <!-- <teleport to="body"> -->
-        <el-drawer v-model="nodeSetFormVisible" :title="nodeData.nodeName" direction="rtl" size="70%"
+        <el-drawer v-model="nodeSetFormVisible" :title="nodeData.nodeName" direction="rtl" size="50%"
             :append-to-body="true" :destroy-on-close="true">
-            <el-form :label-position="labelPosition" label-width="100px" :model="nodeData" style="max-width: 460px">
+            <el-form :label-position="labelPosition" label-width="100px" :model="nodeData">
                 <el-form-item :label="t('lang.common.nodeName')" :label-width="formLabelWidth">
                     <el-input v-model="nodeData.nodeName" />
                 </el-form-item>
