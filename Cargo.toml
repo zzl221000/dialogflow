@@ -100,10 +100,10 @@ windows = {version = "0.61.1", features = ["Win32_Globalization","Win32_System_S
 # https://doc.rust-lang.org/cargo/reference/specifying-dependencies.html#platform-specific-dependencies
 # https://doc.rust-lang.org/reference/conditional-compilation.html
 [target.'cfg(target_env = "gnu")'.dependencies]
-openssl = { version = "0.10.72", features = ["vendored"] }
+openssl = { version = "0.10.73", features = ["vendored"] }
 
 [target.'cfg(target_env = "musl")'.dependencies]
-openssl = { version = "0.10.72", features = ["vendored"] }
+openssl = { version = "0.10.73", features = ["vendored"] }
 mimalloc = "0.1.46"
 
 [profile.dev]
