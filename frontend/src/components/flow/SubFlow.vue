@@ -661,8 +661,19 @@ function newSessionId() {
 }
 function addChat(t, c, aT, idx) {
     if (idx && idx > -1) {
-        chatRecords.value[idx].text += t;
-        return idx;
+        if (idx >= chatRecords.value.length) {
+            for (let i = chatRecords.value.length; i < idx; i++) {
+                chatRecords.value.push(chatRecords.value.push({
+                    id: 'chat-' + Math.random().toString(16),
+                    text: '',
+                    cssClass: c,
+                    answerType: aT,
+                }));
+            }
+        } else {
+            chatRecords.value[idx].text += t;
+            return idx;
+        }
     }
     chatRecords.value.push({
         id: 'chat-' + Math.random().toString(16),
@@ -698,9 +709,28 @@ async function dryrun() {
         let { value, done } = await res.reader.read();
         let idx = -1;
         while (!done) {
-            // console.log('chunk:', value);
-            console.log('idx:', idx);
-            idx = showAnswers(JSON.parse(value), idx);
+            console.log('chunk:', value);
+            // console.log('idx:', idx);
+            if (value === null || value === undefined || value.trim().length == 0) {
+                continue;
+            }
+            value.substring(1, value.length - 1).split('}{').forEach((line) => {
+                if (line.trim().length > 0) {
+                    console.log('line:', line);
+                    // const c = value.charAt(0);
+                    // let j;
+                    // if (c !== '{' && c !== '[') {
+                    //     j = { data: { answers: [{ content: value }] } };
+                    // }
+                    // else
+                    //     j = JSON.parse(line);
+                    const j = JSON.parse('{' + line + '}');
+                    if (Object.hasOwn(j, 'contentSeq')) {
+                        showAnswers({ status: 200, data: { answers: [{ content: j.content }] } }, j.contentSeq);
+                    } else
+                        idx = showAnswers({ status: 200, data: j }, idx);
+                }
+            });
             ({ value, done } = await res.reader.read());
         }
     } else {

@@ -9,6 +9,7 @@ use super::condition::ConditionData;
 use super::context::Context;
 use super::dto::{
     AnswerContentType, AnswerData, CollectData, Request, ResponseData, ResponseSenderWrapper,
+    StreamingResponseData,
 };
 use crate::ai::chat::ResultSender;
 use crate::ai::completion::Prompt;
@@ -141,8 +142,19 @@ impl RuntimeNode for TextNode {
         // let now = std::time::Instant::now();
         match replace_vars(&self.text, req, ctx) {
             Ok(answer) => {
-                if let Some(sender) = channel_sender.sender.take() {
-                    crate::sse_send!(sender, answer);
+                if channel_sender.sender.is_some() {
+                    let sender = channel_sender.sender.as_ref().unwrap().clone();
+                    log::info!(
+                        "TextNode sse send {} {}",
+                        ctx.chat_history.len(),
+                        (ctx.chat_history.len() + 1) / 2
+                    );
+                    let streaming = StreamingResponseData {
+                        content_seq: 3,
+                        content: answer,
+                    };
+                    let res_data = serde_json::to_string(&streaming).unwrap();
+                    crate::sse_send!(sender, res_data);
                 } else {
                     response.answers.push(AnswerData {
                         content: answer,
@@ -221,7 +233,12 @@ impl RuntimeNode for LlmGenTextNode {
                 channel_sender.receiver = Some(r);
             }
             let s = channel_sender.sender.clone().unwrap();
+            let res_data = serde_json::to_string(response).unwrap();
             tokio::task::spawn(async move {
+                if let Err(e) = s.send(res_data).await {
+                    log::warn!("LlmGenTextNode response failed, err: {:?}", &e);
+                    return;
+                }
                 if let Err(e) = crate::ai::chat::chat(
                     &robot_id,
                     Some(chat_history),
@@ -231,7 +248,7 @@ impl RuntimeNode for LlmGenTextNode {
                 )
                 .await
                 {
-                    log::info!("LlmGenTextNode response failed, err: {:?}", &e);
+                    log::warn!("LlmGenTextNode response failed, err: {:?}", &e);
                 }
             });
         } else {

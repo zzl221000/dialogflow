@@ -331,7 +331,12 @@ async fn ollama(
                                     }
                                     let m = String::from(s);
                                     log::info!("Ollama push {}", &m);
-                                    crate::sse_send!(sender, m);
+                                    let streaming = crate::flow::rt::dto::StreamingResponseData {
+                                        content_seq: 2,
+                                        content: m,
+                                    };
+                                    let res_data = serde_json::to_string(&streaming).unwrap();
+                                    crate::sse_send!(sender, res_data);
                                 }
                             }
                         }
