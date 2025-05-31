@@ -11,7 +11,7 @@ use super::dto::{
     AnswerContentType, AnswerData, CollectData, Request, ResponseData, ResponseSenderWrapper,
     StreamingResponseData,
 };
-use crate::ai::chat::ResultSender;
+use crate::ai::chat::{ResultSender, SenderWrapper};
 use crate::ai::completion::Prompt;
 use crate::external::http::client as http;
 use crate::flow::rt::collector;
@@ -144,17 +144,11 @@ impl RuntimeNode for TextNode {
             Ok(answer) => {
                 if channel_sender.sender.is_some() {
                     let sender = channel_sender.sender.as_ref().unwrap().clone();
-                    log::info!(
-                        "TextNode sse send {} {}",
-                        ctx.chat_history.len(),
-                        (ctx.chat_history.len() + 1) / 2
-                    );
                     let streaming = StreamingResponseData {
-                        content_seq: 3,
+                        content_seq: Some(ctx.add_answer_history(&answer)),
                         content: answer,
                     };
-                    let res_data = serde_json::to_string(&streaming).unwrap();
-                    crate::sse_send!(sender, res_data);
+                    crate::sse_send!(sender, streaming);
                 } else {
                     response.answers.push(AnswerData {
                         content: answer,
@@ -228,23 +222,32 @@ impl RuntimeNode for LlmGenTextNode {
             let read_timeout = self.read_timeout;
             // let (s, r) = tokio::sync::mpsc::channel::<String>(1);
             if channel_sender.sender.is_none() {
-                let (s, r) = tokio::sync::mpsc::channel::<String>(2);
+                let (s, r) = tokio::sync::mpsc::channel::<StreamingResponseData>(2);
                 channel_sender.sender = Some(s);
                 channel_sender.receiver = Some(r);
             }
             let s = channel_sender.sender.clone().unwrap();
             let res_data = serde_json::to_string(response).unwrap();
+            let content_seq = ctx.add_answer_history("");
             tokio::task::spawn(async move {
-                if let Err(e) = s.send(res_data).await {
+                let send_data = StreamingResponseData {
+                    content_seq: None,
+                    content: res_data,
+                };
+                if let Err(e) = s.send(send_data).await {
                     log::warn!("LlmGenTextNode response failed, err: {:?}", &e);
                     return;
                 }
+                let sender_wrappoer = SenderWrapper {
+                    sender: s,
+                    content_seq,
+                };
                 if let Err(e) = crate::ai::chat::chat(
                     &robot_id,
                     Some(chat_history),
                     connect_timeout,
                     read_timeout,
-                    ResultSender::ChannelSender(&s),
+                    ResultSender::ChannelSender(sender_wrappoer),
                 )
                 .await
                 {
@@ -717,18 +720,22 @@ impl LlmChatNode {
             let read_timeout = self.read_timeout;
             // let (s, r) = tokio::sync::mpsc::channel::<String>(1);
             if channel_sender.sender.is_none() {
-                let (s, r) = tokio::sync::mpsc::channel::<String>(2);
+                let (s, r) = tokio::sync::mpsc::channel::<StreamingResponseData>(2);
                 channel_sender.sender = Some(s);
                 channel_sender.receiver = Some(r);
             }
             let s = channel_sender.sender.clone().unwrap();
+            let sender_wrapper = SenderWrapper {
+                sender: s,
+                content_seq: ctx.add_answer_history(""),
+            };
             tokio::task::spawn(async move {
                 if let Err(e) = crate::ai::chat::chat(
                     &robot_id,
                     chat_history,
                     connect_timeout,
                     read_timeout,
-                    ResultSender::ChannelSender(&s),
+                    ResultSender::ChannelSender(sender_wrapper),
                 )
                 .await
                 {

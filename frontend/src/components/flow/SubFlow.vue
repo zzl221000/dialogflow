@@ -725,7 +725,7 @@ async function dryrun() {
                     // else
                     //     j = JSON.parse(line);
                     const j = JSON.parse('{' + line + '}');
-                    if (Object.hasOwn(j, 'contentSeq')) {
+                    if (Object.hasOwn(j, 'contentSeq') && j.contentSeq !== null) {
                         showAnswers({ status: 200, data: { answers: [{ content: j.content }] } }, j.contentSeq);
                     } else
                         idx = showAnswers({ status: 200, data: j }, idx);
@@ -760,6 +760,8 @@ function showAnswers(r, idx) {
     if (r.status == 200) {
         const data = r.data;
         const answers = data.answers;
+        if (answers == null)
+            return null;
         let newIdx = -1;
         for (let i = 0; i < answers.length; i++)
             newIdx = addChat(answers[i].content, 'responseText', answers[i].contentType, idx);

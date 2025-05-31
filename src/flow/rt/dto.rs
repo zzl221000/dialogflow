@@ -50,14 +50,14 @@ pub(crate) struct AnswerData {
 }
 
 pub(crate) struct ResponseSenderWrapper {
-    pub(crate) sender: Option<tokio::sync::mpsc::Sender<String>>,
-    pub(crate) receiver: Option<tokio::sync::mpsc::Receiver<String>>,
+    pub(crate) sender: Option<tokio::sync::mpsc::Sender<StreamingResponseData>>,
+    pub(crate) receiver: Option<tokio::sync::mpsc::Receiver<StreamingResponseData>>,
 }
 
 #[derive(Serialize)]
 pub(crate) struct StreamingResponseData {
     #[serde(rename = "contentSeq")]
-    pub(crate) content_seq: usize,
+    pub(crate) content_seq: Option<usize>,
     pub(crate) content: String,
 }
 

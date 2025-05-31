@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value};
 use tokio::sync::mpsc::Sender;
 
-use super::chat::ResultSender;
+use super::chat::{ResultSender, SenderWrapper};
 use crate::ai::huggingface::{HuggingFaceModel, LoadedHuggingFaceModel};
 use crate::man::settings;
 use crate::result::{Error, Result};
@@ -56,7 +56,7 @@ pub(crate) fn replace_model_cache(robot_id: &str, m: &HuggingFaceModel) -> Resul
 pub(crate) async fn completion(
     robot_id: &str,
     prompt: &str,
-    sender: &Sender<String>,
+    sender: Sender<crate::flow::rt::dto::StreamingResponseData>,
 ) -> Result<()> {
     if let Some(settings) = settings::get_settings(robot_id)? {
         log::info!("{:?}", &settings.text_generation_provider.provider);
@@ -179,7 +179,7 @@ async fn huggingface(
     m: &HuggingFaceModel,
     prompt: &str,
     sample_len: usize,
-    sender: &Sender<String>,
+    sender: Sender<crate::flow::rt::dto::StreamingResponseData>,
 ) -> Result<()> {
     let info = m.get_info();
     // log::info!("model_type={:?}", &info.model_type);
@@ -193,7 +193,10 @@ async fn huggingface(
         model.insert(String::from(robot_id), r);
     };
     let loaded_model = model.get(robot_id).unwrap();
-    let mut result_sender = ResultSender::ChannelSender(sender);
+    let mut result_sender = ResultSender::ChannelSender(SenderWrapper {
+        sender,
+        content_seq: 0,
+    });
     match loaded_model {
         LoadedHuggingFaceModel::Gemma(m) => super::gemma::gen_text(
             &m.0,
@@ -239,7 +242,7 @@ async fn open_ai(
     connect_timeout_millis: u32,
     read_timeout_millis: u32,
     proxy_url: &str,
-    sender: &Sender<String>,
+    sender: Sender<crate::flow::rt::dto::StreamingResponseData>,
 ) -> Result<()> {
     let client = crate::external::http::get_client(
         connect_timeout_millis.into(),
@@ -264,6 +267,10 @@ async fn open_ai(
         .header("Authorization", "Bearer ")
         .body(serde_json::to_string(&obj)?);
     let mut stream = req.send().await?.bytes_stream();
+    let sender_wrapper = SenderWrapper {
+        sender,
+        content_seq: 0,
+    };
     while let Some(item) = stream.next().await {
         let chunk = item?;
         let v: Value = serde_json::from_slice(chunk.as_ref())?;
@@ -278,7 +285,7 @@ async fn open_ai(
                                         if let Some(s) = content.as_str() {
                                             let m = String::from(s);
                                             log::info!("OpenAI push {}", &m);
-                                            sse_send!(sender, m);
+                                            sender_wrapper.send(m);
                                         }
                                     }
                                 }
@@ -300,7 +307,7 @@ async fn ollama(
     read_timeout_millis: u32,
     proxy_url: &str,
     sample_len: u32,
-    sender: &Sender<String>,
+    sender: Sender<crate::flow::rt::dto::StreamingResponseData>,
 ) -> Result<()> {
     let prompts: Vec<Prompt> = serde_json::from_str(s)?;
     let mut prompt = String::with_capacity(32);
@@ -332,6 +339,10 @@ async fn ollama(
     // log::info!("Request Ollama body {} to {}", &body, u);
     let req = client.post(u).body(body);
     let mut stream = req.send().await?.bytes_stream();
+    let sender_wrapper = SenderWrapper {
+        sender,
+        content_seq: 0,
+    };
     while let Some(item) = stream.next().await {
         let chunk = item?;
         let v: Value = serde_json::from_slice(chunk.as_ref())?;
@@ -340,7 +351,7 @@ async fn ollama(
                 if let Some(s) = res.as_str() {
                     let m = String::from(s);
                     log::info!("Ollama push {}", &m);
-                    sse_send!(sender, m);
+                    sender_wrapper.send(m);
                 }
             }
         }

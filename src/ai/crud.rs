@@ -39,15 +39,15 @@ pub(crate) async fn gen_text(bytes: Bytes) -> Sse<impl Stream<Item = Result<Even
         // Either::Right(stream::once(futures::future::ready(Ok::<Event, Infallible>(
         //     Event::default().data("Invalid robot_id or prompt")
         // ))))
-        let (sender, receiver) = mpsc::channel::<String>(5);
+        let (sender, receiver) = mpsc::channel::<crate::flow::rt::dto::StreamingResponseData>(5);
         let stream = ReceiverStream::new(receiver).map(|s| {
             // log::info!("Sse sending {s}");
-            let event = Event::default().data(s);
+            let event = Event::default().data(s.content);
             Ok::<Event, Infallible>(event)
         });
         tokio::spawn(async move {
-            let borrowed_sender = &sender;
-            if let Err(e) = completion::completion(&q.robot_id, &q.prompt, borrowed_sender).await {
+            // let borrowed_sender = &sender;
+            if let Err(e) = completion::completion(&q.robot_id, &q.prompt, sender).await {
                 log::error!("{:?}", &e);
             }
         });

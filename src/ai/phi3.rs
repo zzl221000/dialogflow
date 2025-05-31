@@ -5,6 +5,7 @@ use frand::Rand;
 use tokenizers::Tokenizer;
 
 use super::chat::ResultSender;
+use crate::flow::rt::dto::StreamingResponseData;
 use crate::result::{Error, Result};
 
 // static TEXT_GENERATION_MODEL: OnceLock<Mutex<HashMap<String, (Model, Tokenizer)>>> =
@@ -28,7 +29,7 @@ pub(super) fn gen_text(
     prompt: &str,
     sample_len: usize,
     top_p: Option<f64>,
-    result_sender: &mut ResultSender<'_, String>,
+    result_sender: &mut ResultSender<'_, StreamingResponseData>,
 ) -> Result<()> {
     // let device = device()?;
     // let lock = TEXT_GENERATION_MODEL.get_or_init(|| Mutex::new(HashMap::with_capacity(32)));
@@ -98,8 +99,9 @@ pub(super) fn gen_text(
         if next_token == eos_token {
             if let Some(t) = tokenizer.decode_rest()? {
                 match result_sender {
-                    ResultSender::ChannelSender(sender) => {
-                        crate::sse_send!(sender, t);
+                    ResultSender::ChannelSender(sender_wrapper) => {
+                        // crate::sse_send!(sender, t);
+                        sender_wrapper.send(t);
                     }
                     ResultSender::StrBuf(sb) => {
                         sb.push_str(&t);
@@ -111,8 +113,8 @@ pub(super) fn gen_text(
         }
         if let Some(t) = tokenizer.next_token(next_token)? {
             match result_sender {
-                ResultSender::ChannelSender(sender) => {
-                    crate::sse_send!(sender, t);
+                ResultSender::ChannelSender(sender_wrapper) => {
+                    sender_wrapper.send(t);
                 }
                 ResultSender::StrBuf(sb) => {
                     sb.push_str(&t);

@@ -9,6 +9,7 @@ use tokio::sync::mpsc::Sender;
 
 use super::completion::Prompt;
 use crate::ai::huggingface::{HuggingFaceModel, LoadedHuggingFaceModel};
+use crate::flow::rt::dto::StreamingResponseData;
 use crate::man::settings;
 use crate::result::{Error, Result};
 
@@ -17,8 +18,33 @@ static LOADED_MODELS: LazyLock<Mutex<HashMap<String, LoadedHuggingFaceModel>>> =
 // static HTTP_CLIENTS: LazyLock<Mutex<HashMap<String, LoadedHuggingFaceModel>>> =
 //     LazyLock::new(|| Mutex::new(HashMap::with_capacity(32)));
 
+pub(crate) struct SenderWrapper<D> {
+    pub(crate) sender: Sender<D>,
+    pub(crate) content_seq: usize,
+}
+
+impl SenderWrapper<StreamingResponseData> {
+    pub(crate) fn send(&self, content: String) -> Result<()> {
+        let data = StreamingResponseData {
+            content_seq: Some(self.content_seq),
+            content,
+        };
+        crate::sse_send!(self.sender, data);
+        Ok(())
+    }
+    pub(crate) fn try_send(&self, content: String) -> Result<()> {
+        let data = StreamingResponseData {
+            content_seq: Some(self.content_seq),
+            content,
+        };
+        self.sender
+            .try_send(data)
+            .map_err(|e| Error::WithMessage(format!("{:#?}", &e)))
+    }
+}
+
 pub(crate) enum ResultSender<'r, D> {
-    ChannelSender(&'r Sender<D>),
+    ChannelSender(SenderWrapper<D>),
     StrBuf(&'r mut String),
 }
 
@@ -43,7 +69,7 @@ pub(crate) async fn chat(
     chat_history: Option<Vec<Prompt>>,
     connect_timeout: Option<u32>,
     read_timeout: Option<u32>,
-    result_sender: ResultSender<'_, String>,
+    result_sender: ResultSender<'_, StreamingResponseData>,
 ) -> Result<()> {
     if let Some(settings) = settings::get_settings(robot_id)? {
         // log::info!("{:?}", &settings.chat_provider.provider);
@@ -97,7 +123,7 @@ fn huggingface(
     m: &HuggingFaceModel,
     chat_history: Option<Vec<Prompt>>,
     sample_len: usize,
-    mut result_sender: ResultSender<'_, String>,
+    mut result_sender: ResultSender<'_, StreamingResponseData>,
 ) -> Result<()> {
     let info = m.get_info();
     // log::info!("model_type={:?}", &info.model_type);
@@ -157,7 +183,7 @@ async fn open_ai(
     connect_timeout_millis: u32,
     read_timeout_millis: u32,
     proxy_url: &str,
-    result_sender: ResultSender<'_, String>,
+    result_sender: ResultSender<'_, StreamingResponseData>,
 ) -> Result<()> {
     // let client = HTTP_CLIENTS.lock()?.entry(String::from("value")).or_insert(crate::external::http::get_client(connect_timeout_millis.into(), read_timeout_millis.into(), proxy_url)?);
     let client = crate::external::http::get_client(
@@ -208,7 +234,7 @@ async fn open_ai(
         .body(serde_json::to_string(&obj)?);
     let res = req.send().await?;
     match result_sender {
-        ResultSender::ChannelSender(sender) => {
+        ResultSender::ChannelSender(_sender_wrapper) => {
             let mut stream = res.bytes_stream();
             while let Some(item) = stream.next().await {
                 let chunk = item?;
@@ -272,7 +298,7 @@ async fn ollama(
     read_timeout_millis: u32,
     proxy_url: &str,
     sample_len: u32,
-    result_sender: ResultSender<'_, String>,
+    result_sender: ResultSender<'_, StreamingResponseData>,
 ) -> Result<()> {
     let client = crate::external::http::get_client(
         connect_timeout_millis.into(),
@@ -315,7 +341,7 @@ async fn ollama(
     let req = client.post(u).body(body);
     let res = req.send().await?;
     match result_sender {
-        ResultSender::ChannelSender(sender) => {
+        ResultSender::ChannelSender(sender_wrapper) => {
             let mut stream = res.bytes_stream();
             while let Some(item) = stream.next().await {
                 let chunk = item?;
@@ -325,18 +351,13 @@ async fn ollama(
                         if let Some(content) = message.get("content") {
                             if content.is_string() {
                                 if let Some(s) = content.as_str() {
-                                    if sender.is_closed() {
+                                    if sender_wrapper.sender.is_closed() {
                                         log::warn!("Ollama channel sender is closed");
                                         break;
                                     }
                                     let m = String::from(s);
                                     log::info!("Ollama push {}", &m);
-                                    let streaming = crate::flow::rt::dto::StreamingResponseData {
-                                        content_seq: 2,
-                                        content: m,
-                                    };
-                                    let res_data = serde_json::to_string(&streaming).unwrap();
-                                    crate::sse_send!(sender, res_data);
+                                    sender_wrapper.send(m);
                                 }
                             }
                         }

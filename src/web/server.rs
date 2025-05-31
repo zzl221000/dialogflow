@@ -437,7 +437,13 @@ struct ResponseData<D> {
 }
 
 pub(crate) fn to_res2<D>(
-    r: Result<(D, Option<tokio::sync::mpsc::Receiver<String>>), Error>,
+    r: Result<
+        (
+            D,
+            Option<tokio::sync::mpsc::Receiver<crate::flow::rt::dto::StreamingResponseData>>,
+        ),
+        Error,
+    >,
 ) -> axum::response::Response
 where
     D: serde::Serialize + 'static + std::marker::Send,
@@ -466,9 +472,8 @@ where
                     //     data: Some(r),
                     //     err: None,
                     // };
-                    // let body = serde_json::to_string(&res).unwrap();
-                    // Ok::<_, std::convert::Infallible>(body)
-                    Ok::<_, std::convert::Infallible>(d)
+                    let body = serde_json::to_string(&d).unwrap();
+                    Ok::<_, std::convert::Infallible>(body)
                 }));
                 builder
                     .header(header::TRANSFER_ENCODING, "chunked")
