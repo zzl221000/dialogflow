@@ -49,9 +49,27 @@ pub(crate) struct AnswerData {
     pub(crate) content_type: AnswerContentType,
 }
 
-pub(crate) struct ResponseSenderWrapper {
+pub(crate) struct ResponseChannelWrapper {
     pub(crate) sender: Option<tokio::sync::mpsc::Sender<StreamingResponseData>>,
     pub(crate) receiver: Option<tokio::sync::mpsc::Receiver<StreamingResponseData>>,
+}
+
+impl ResponseChannelWrapper {
+    pub(crate) fn new(buffer: usize) -> Self {
+        let (sender, receiver) = tokio::sync::mpsc::channel(buffer);
+        Self {
+            sender: Some(sender),
+            receiver: Some(receiver),
+        }
+    }
+    pub(crate) fn send_response(&self, res: &ResponseData) {
+        let res_data = serde_json::to_string(res).unwrap();
+        log::info!("send response: {}", &res_data);
+        crate::sse_send!(self.sender.as_ref().unwrap(), StreamingResponseData {
+            content_seq: None,
+            content: res_data,
+        });
+    }
 }
 
 #[derive(Serialize)]

@@ -8,7 +8,7 @@ use rkyv::{Archive, Deserialize, Serialize, util::AlignedVec};
 use super::condition::ConditionData;
 use super::context::Context;
 use super::dto::{
-    AnswerContentType, AnswerData, CollectData, Request, ResponseData, ResponseSenderWrapper,
+    AnswerContentType, AnswerData, CollectData, Request, ResponseChannelWrapper, ResponseData,
     StreamingResponseData,
 };
 use crate::ai::chat::{ResultSender, SenderWrapper};
@@ -57,7 +57,7 @@ pub(crate) trait RuntimeNode {
         req: &Request,
         ctx: &mut Context,
         response: &mut ResponseData,
-        channel_sender: &mut ResponseSenderWrapper,
+        channel_sender: &mut ResponseChannelWrapper,
     ) -> bool;
 }
 
@@ -136,7 +136,7 @@ impl RuntimeNode for TextNode {
         req: &Request,
         ctx: &mut Context,
         response: &mut ResponseData,
-        channel_sender: &mut ResponseSenderWrapper,
+        channel_sender: &mut ResponseChannelWrapper,
     ) -> bool {
         log::info!("Into TextNode {}", &self.text);
         // let now = std::time::Instant::now();
@@ -184,7 +184,7 @@ impl RuntimeNode for LlmGenTextNode {
         req: &Request,
         ctx: &mut Context,
         response: &mut ResponseData,
-        channel_sender: &mut ResponseSenderWrapper,
+        channel_sender: &mut ResponseChannelWrapper,
     ) -> bool {
         // log::info!("Into LlmGenTextNode");
         // let now = std::time::Instant::now();
@@ -347,7 +347,7 @@ impl RuntimeNode for GotoMainFlowNode {
         _req: &Request,
         ctx: &mut Context,
         _response: &mut ResponseData,
-        _channel_sender: &mut ResponseSenderWrapper,
+        _channel_sender: &mut ResponseChannelWrapper,
     ) -> bool {
         // println!("Into GotoMainFlowNode");
         ctx.main_flow_id.clear();
@@ -369,7 +369,7 @@ impl RuntimeNode for GotoAnotherNode {
         _req: &Request,
         ctx: &mut Context,
         _response: &mut ResponseData,
-        _channel_sender: &mut ResponseSenderWrapper,
+        _channel_sender: &mut ResponseChannelWrapper,
     ) -> bool {
         // println!("Into GotoAnotherNode");
         add_next_node(ctx, &self.next_node_id);
@@ -392,7 +392,7 @@ impl RuntimeNode for CollectNode {
         req: &Request,
         ctx: &mut Context,
         response: &mut ResponseData,
-        _channel_sender: &mut ResponseSenderWrapper,
+        _channel_sender: &mut ResponseChannelWrapper,
     ) -> bool {
         // println!("Into CollectNode");
         if let Some(r) = collector::collect(&req.user_input, &self.collect_type) {
@@ -427,7 +427,7 @@ impl RuntimeNode for ConditionNode {
         req: &Request,
         ctx: &mut Context,
         _response: &mut ResponseData,
-        _channel_sender: &mut ResponseSenderWrapper,
+        _channel_sender: &mut ResponseChannelWrapper,
     ) -> bool {
         // println!("Into ConditionNode");
         let mut r = false;
@@ -458,10 +458,13 @@ impl RuntimeNode for TerminateNode {
         _req: &Request,
         _ctx: &mut Context,
         response: &mut ResponseData,
-        _channel_sender: &mut ResponseSenderWrapper,
+        channel_sender: &mut ResponseChannelWrapper,
     ) -> bool {
-        // log::info!("Into TerminateNode");
+        log::info!("Into TerminateNode");
         response.next_action = NextActionType::Terminate;
+        if channel_sender.sender.is_some() {
+            channel_sender.send_response(response);
+        }
         true
     }
 }
@@ -482,7 +485,7 @@ impl RuntimeNode for ExternalHttpCallNode {
         req: &Request,
         ctx: &mut Context,
         _response: &mut ResponseData,
-        _channel_sender: &mut ResponseSenderWrapper,
+        _channel_sender: &mut ResponseChannelWrapper,
     ) -> bool {
         // println!("Into ExternalHttpCallNode");
         let mut goto_node_id = &self.next_node_id;
@@ -617,7 +620,7 @@ impl RuntimeNode for SendEmailNode {
         req: &Request,
         ctx: &mut Context,
         _response: &mut ResponseData,
-        _channel_sender: &mut ResponseSenderWrapper,
+        _channel_sender: &mut ResponseChannelWrapper,
     ) -> bool {
         // println!("Into SendEmailNode");
         if let Ok(Some(settings)) = get_settings(&req.robot_id) {
@@ -669,7 +672,7 @@ impl LlmChatNode {
         req: &Request,
         ctx: &mut Context,
         response: &mut ResponseData,
-        channel_sender: &mut ResponseSenderWrapper,
+        channel_sender: &mut ResponseChannelWrapper,
     ) -> bool {
         // log::info!("Into LlmChatNode");
         self.cur_run_times += 1;
@@ -839,7 +842,7 @@ impl RuntimeNode for LlmChatNode {
         req: &Request,
         ctx: &mut Context,
         response: &mut ResponseData,
-        channel_sender: &mut ResponseSenderWrapper,
+        channel_sender: &mut ResponseChannelWrapper,
     ) -> bool {
         // log::info!("Into LlmChatNode");
         let r = self.inner_exec(req, ctx, response, channel_sender);
@@ -1091,7 +1094,7 @@ impl RuntimeNode for KnowledgeBaseAnswerNode {
         req: &Request,
         ctx: &mut Context,
         response: &mut ResponseData,
-        _channel_sender: &mut ResponseSenderWrapper,
+        _channel_sender: &mut ResponseChannelWrapper,
     ) -> bool {
         // log::info!("Into LlmChaKnowledgeBaseAnswerNodetNode");
         for answer_source in &self.retrieve_answer_sources {

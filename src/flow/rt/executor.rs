@@ -3,7 +3,7 @@ use std::sync::LazyLock;
 use regex::Regex;
 
 use super::context::Context;
-use super::dto::{Request, ResponseData, ResponseSenderWrapper};
+use super::dto::{Request, ResponseChannelWrapper, ResponseData};
 use crate::ai::completion::Prompt;
 use crate::flow::rt::dto::{StreamingResponseData, UserInputResult};
 use crate::flow::rt::node::RuntimeNode;
@@ -86,7 +86,7 @@ pub(in crate::flow::rt) fn exec(
 )> {
     // let now = std::time::Instant::now();
     let mut response = ResponseData::new(req);
-    let mut sender_wapper = ResponseSenderWrapper {
+    let mut sender_wapper = ResponseChannelWrapper {
         sender: None,
         receiver: None,
     };

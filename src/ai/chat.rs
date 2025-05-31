@@ -24,13 +24,12 @@ pub(crate) struct SenderWrapper<D> {
 }
 
 impl SenderWrapper<StreamingResponseData> {
-    pub(crate) fn send(&self, content: String) -> Result<()> {
+    pub(crate) fn send(&self, content: String) {
         let data = StreamingResponseData {
             content_seq: Some(self.content_seq),
             content,
         };
         crate::sse_send!(self.sender, data);
-        Ok(())
     }
     pub(crate) fn try_send(&self, content: String) -> Result<()> {
         let data = StreamingResponseData {
