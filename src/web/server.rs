@@ -437,7 +437,13 @@ struct ResponseData<D> {
 }
 
 pub(crate) fn to_res2<D>(
-    r: Result<(D, Option<tokio::sync::mpsc::Receiver<String>>), Error>,
+    r: Result<
+        (
+            D,
+            Option<tokio::sync::mpsc::Receiver<crate::flow::rt::dto::StreamingResponseData>>,
+        ),
+        Error,
+    >,
 ) -> axum::response::Response
 where
     D: serde::Serialize + 'static + std::marker::Send,
@@ -460,13 +466,13 @@ where
                 // log::info!("Response is chunked");
                 let s = tokio_stream::wrappers::ReceiverStream::new(receiver.unwrap());
                 let body = axum::body::Body::from_stream(s.map(|d| {
-                    let r = crate::flow::rt::dto::ResponseData::new_with_plain_text_answer(d);
-                    let res = ResponseData {
-                        status: StatusCode::OK.as_u16(),
-                        data: Some(r),
-                        err: None,
-                    };
-                    let body = serde_json::to_string(&res).unwrap();
+                    // let r = crate::flow::rt::dto::ResponseData::new_with_plain_text_answer(d);
+                    // let res = ResponseData {
+                    //     status: StatusCode::OK.as_u16(),
+                    //     data: Some(r),
+                    //     err: None,
+                    // };
+                    let body = serde_json::to_string(&d).unwrap();
                     Ok::<_, std::convert::Infallible>(body)
                 }));
                 builder

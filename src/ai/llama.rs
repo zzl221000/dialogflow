@@ -6,6 +6,7 @@ use frand::Rand;
 use tokenizers::Tokenizer;
 
 use super::chat::ResultSender;
+use crate::flow::rt::dto::StreamingResponseData;
 use crate::result::{Error, Result};
 
 // static TEXT_GENERATION_MODEL: OnceLock<
@@ -33,7 +34,7 @@ pub(super) fn gen_text(
     sample_len: usize,
     top_k: Option<usize>,
     top_p: Option<f64>,
-    result_sender: &mut ResultSender<'_, String>,
+    result_sender: &mut ResultSender<'_, StreamingResponseData>,
 ) -> Result<()> {
     // let device = device()?;
     // let lock = TEXT_GENERATION_MODEL.get_or_init(|| Mutex::new(HashMap::with_capacity(32)));
@@ -142,12 +143,12 @@ pub(super) fn gen_text(
             // }
             log::info!("Llama {}", &t);
             match result_sender {
-                ResultSender::ChannelSender(sender) => {
-                    if sender.is_closed() {
+                ResultSender::ChannelSender(sender_wrapper) => {
+                    if sender_wrapper.sender.is_closed() {
                         log::info!("Sender closed, break");
                         break;
                     }
-                    crate::sse_send!(sender, t);
+                    sender_wrapper.send(t);
                 }
                 ResultSender::StrBuf(sb) => {
                     sb.push_str(&t);
@@ -158,8 +159,9 @@ pub(super) fn gen_text(
     }
     if let Some(rest) = tokenizer.decode_rest()? {
         match result_sender {
-            ResultSender::ChannelSender(sender) => {
-                crate::sse_send!(sender, rest);
+            ResultSender::ChannelSender(sender_wrapper) => {
+                // crate::sse_send!(sender, rest);
+                sender_wrapper.send(rest);
             }
             ResultSender::StrBuf(sb) => {
                 sb.push_str(&rest);

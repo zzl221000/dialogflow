@@ -3,18 +3,22 @@ use std::sync::LazyLock;
 use regex::Regex;
 
 use super::context::Context;
-use super::dto::{Request, ResponseData, ResponseSenderWrapper};
+use super::dto::{Request, ResponseChannelWrapper, ResponseData};
 use crate::ai::completion::Prompt;
-use crate::flow::rt::dto::UserInputResult;
+use crate::flow::rt::dto::{StreamingResponseData, UserInputResult};
 use crate::flow::rt::node::RuntimeNode;
 use crate::intent::detector;
 use crate::result::{Error, Result};
 
-static HTML_TAG_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"<[^>]+>").unwrap());
+pub(crate) static HTML_TAG_REGEX: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"<[^>]+>").unwrap());
 
 pub(in crate::flow::rt) async fn process(
     req: &mut Request,
-) -> Result<(ResponseData, Option<tokio::sync::mpsc::Receiver<String>>)> {
+) -> Result<(
+    ResponseData,
+    Option<tokio::sync::mpsc::Receiver<StreamingResponseData>>,
+)> {
     // log::info!("user input: {}", &req.user_input);
     // let now = std::time::Instant::now();
     if req.session_id.is_none() || req.session_id.as_ref().unwrap().is_empty() {
@@ -76,10 +80,13 @@ pub(in crate::flow::rt) async fn process(
 pub(in crate::flow::rt) fn exec(
     req: &Request,
     ctx: &mut Context,
-) -> Result<(ResponseData, Option<tokio::sync::mpsc::Receiver<String>>)> {
+) -> Result<(
+    ResponseData,
+    Option<tokio::sync::mpsc::Receiver<StreamingResponseData>>,
+)> {
     // let now = std::time::Instant::now();
     let mut response = ResponseData::new(req);
-    let mut sender_wapper = ResponseSenderWrapper {
+    let mut sender_wapper = ResponseChannelWrapper {
         sender: None,
         receiver: None,
     };

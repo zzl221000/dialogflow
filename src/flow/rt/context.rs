@@ -41,6 +41,19 @@ pub(crate) struct Context {
 }
 
 impl Context {
+    pub(crate) fn add_answer_history(&mut self, content: &str) -> usize {
+        let l = self.chat_history.len() - 1;
+        self.chat_history.push(Prompt {
+            role: String::from("assistant"),
+            content: super::executor::HTML_TAG_REGEX
+                .replace_all(content, "")
+                .to_string(),
+        });
+        l
+    }
+}
+
+impl Context {
     pub(crate) fn get(robot_id: &str, session_id: &str) -> Self {
         let r: Result<Option<Context>> = db::query(TABLE, session_id);
         if let Ok(Some(mut ctx)) = r {

@@ -6,6 +6,7 @@ use frand::Rand;
 use tokenizers::Tokenizer;
 
 use super::chat::ResultSender;
+use crate::flow::rt::dto::StreamingResponseData;
 use crate::result::{Error, Result};
 
 // static TEXT_GENERATION_MODEL: OnceLock<Mutex<HashMap<String, (GemmaModel, Tokenizer)>>> =
@@ -29,7 +30,7 @@ pub(super) fn gen_text(
     prompt: &str,
     sample_len: usize,
     top_p: Option<f64>,
-    result_sender: &mut ResultSender<'_, String>,
+    result_sender: &mut ResultSender<'_, StreamingResponseData>,
 ) -> Result<()> {
     // let device = device()?;
     // let lock = TEXT_GENERATION_MODEL.get_or_init(|| Mutex::new(HashMap::with_capacity(32)));
@@ -97,8 +98,8 @@ pub(super) fn gen_text(
             // std::io::stdout().flush()?;
             // let result_sender = rr.clone();
             match result_sender {
-                ResultSender::ChannelSender(sender) => {
-                    if let Err(e) = sender.try_send(t) {
+                ResultSender::ChannelSender(sender_wrapper) => {
+                    if let Err(e) = sender_wrapper.try_send(t) {
                         log::warn!(
                             "Sent failed, maybe receiver dropped or queue was full, err: {:?}",
                             &e
@@ -118,8 +119,8 @@ pub(super) fn gen_text(
     if let Some(rest) = tokenizer.decode_rest()? {
         // print!("{rest}");
         match result_sender {
-            ResultSender::ChannelSender(sender) => {
-                if let Err(e) = sender.try_send(rest) {
+            ResultSender::ChannelSender(sender_wrapper) => {
+                if let Err(e) = sender_wrapper.try_send(rest) {
                     log::warn!(
                         "Sent failed, maybe receiver dropped or queue was full, err: {:?}",
                         &e

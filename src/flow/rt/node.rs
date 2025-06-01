@@ -8,9 +8,10 @@ use rkyv::{Archive, Deserialize, Serialize, util::AlignedVec};
 use super::condition::ConditionData;
 use super::context::Context;
 use super::dto::{
-    AnswerContentType, AnswerData, CollectData, Request, ResponseData, ResponseSenderWrapper,
+    AnswerContentType, AnswerData, CollectData, Request, ResponseChannelWrapper, ResponseData,
+    StreamingResponseData,
 };
-use crate::ai::chat::ResultSender;
+use crate::ai::chat::{ResultSender, SenderWrapper};
 use crate::ai::completion::Prompt;
 use crate::external::http::client as http;
 use crate::flow::rt::collector;
@@ -56,7 +57,7 @@ pub(crate) trait RuntimeNode {
         req: &Request,
         ctx: &mut Context,
         response: &mut ResponseData,
-        channel_sender: &mut ResponseSenderWrapper,
+        channel_sender: &mut ResponseChannelWrapper,
     ) -> bool;
 }
 
@@ -135,14 +136,19 @@ impl RuntimeNode for TextNode {
         req: &Request,
         ctx: &mut Context,
         response: &mut ResponseData,
-        channel_sender: &mut ResponseSenderWrapper,
+        channel_sender: &mut ResponseChannelWrapper,
     ) -> bool {
         log::info!("Into TextNode {}", &self.text);
         // let now = std::time::Instant::now();
         match replace_vars(&self.text, req, ctx) {
             Ok(answer) => {
-                if let Some(sender) = channel_sender.sender.take() {
-                    crate::sse_send!(sender, answer);
+                if channel_sender.sender.is_some() {
+                    let sender = channel_sender.sender.as_ref().unwrap().clone();
+                    let streaming = StreamingResponseData {
+                        content_seq: Some(ctx.add_answer_history(&answer)),
+                        content: answer,
+                    };
+                    crate::sse_send!(sender, streaming);
                 } else {
                     response.answers.push(AnswerData {
                         content: answer,
@@ -178,7 +184,7 @@ impl RuntimeNode for LlmGenTextNode {
         req: &Request,
         ctx: &mut Context,
         response: &mut ResponseData,
-        channel_sender: &mut ResponseSenderWrapper,
+        channel_sender: &mut ResponseChannelWrapper,
     ) -> bool {
         // log::info!("Into LlmGenTextNode");
         // let now = std::time::Instant::now();
@@ -216,22 +222,36 @@ impl RuntimeNode for LlmGenTextNode {
             let read_timeout = self.read_timeout;
             // let (s, r) = tokio::sync::mpsc::channel::<String>(1);
             if channel_sender.sender.is_none() {
-                let (s, r) = tokio::sync::mpsc::channel::<String>(2);
+                let (s, r) = tokio::sync::mpsc::channel::<StreamingResponseData>(2);
                 channel_sender.sender = Some(s);
                 channel_sender.receiver = Some(r);
             }
             let s = channel_sender.sender.clone().unwrap();
+            let res_data = serde_json::to_string(response).unwrap();
+            let content_seq = ctx.add_answer_history("");
             tokio::task::spawn(async move {
+                let send_data = StreamingResponseData {
+                    content_seq: None,
+                    content: res_data,
+                };
+                if let Err(e) = s.send(send_data).await {
+                    log::warn!("LlmGenTextNode response failed, err: {:?}", &e);
+                    return;
+                }
+                let sender_wrappoer = SenderWrapper {
+                    sender: s,
+                    content_seq,
+                };
                 if let Err(e) = crate::ai::chat::chat(
                     &robot_id,
                     Some(chat_history),
                     connect_timeout,
                     read_timeout,
-                    ResultSender::ChannelSender(&s),
+                    ResultSender::ChannelSender(sender_wrappoer),
                 )
                 .await
                 {
-                    log::info!("LlmGenTextNode response failed, err: {:?}", &e);
+                    log::warn!("LlmGenTextNode response failed, err: {:?}", &e);
                 }
             });
         } else {
@@ -327,7 +347,7 @@ impl RuntimeNode for GotoMainFlowNode {
         _req: &Request,
         ctx: &mut Context,
         _response: &mut ResponseData,
-        _channel_sender: &mut ResponseSenderWrapper,
+        _channel_sender: &mut ResponseChannelWrapper,
     ) -> bool {
         // println!("Into GotoMainFlowNode");
         ctx.main_flow_id.clear();
@@ -349,7 +369,7 @@ impl RuntimeNode for GotoAnotherNode {
         _req: &Request,
         ctx: &mut Context,
         _response: &mut ResponseData,
-        _channel_sender: &mut ResponseSenderWrapper,
+        _channel_sender: &mut ResponseChannelWrapper,
     ) -> bool {
         // println!("Into GotoAnotherNode");
         add_next_node(ctx, &self.next_node_id);
@@ -372,7 +392,7 @@ impl RuntimeNode for CollectNode {
         req: &Request,
         ctx: &mut Context,
         response: &mut ResponseData,
-        _channel_sender: &mut ResponseSenderWrapper,
+        _channel_sender: &mut ResponseChannelWrapper,
     ) -> bool {
         // println!("Into CollectNode");
         if let Some(r) = collector::collect(&req.user_input, &self.collect_type) {
@@ -407,7 +427,7 @@ impl RuntimeNode for ConditionNode {
         req: &Request,
         ctx: &mut Context,
         _response: &mut ResponseData,
-        _channel_sender: &mut ResponseSenderWrapper,
+        _channel_sender: &mut ResponseChannelWrapper,
     ) -> bool {
         // println!("Into ConditionNode");
         let mut r = false;
@@ -438,10 +458,13 @@ impl RuntimeNode for TerminateNode {
         _req: &Request,
         _ctx: &mut Context,
         response: &mut ResponseData,
-        _channel_sender: &mut ResponseSenderWrapper,
+        channel_sender: &mut ResponseChannelWrapper,
     ) -> bool {
-        // log::info!("Into TerminateNode");
+        log::info!("Into TerminateNode");
         response.next_action = NextActionType::Terminate;
+        if channel_sender.sender.is_some() {
+            channel_sender.send_response(response);
+        }
         true
     }
 }
@@ -462,7 +485,7 @@ impl RuntimeNode for ExternalHttpCallNode {
         req: &Request,
         ctx: &mut Context,
         _response: &mut ResponseData,
-        _channel_sender: &mut ResponseSenderWrapper,
+        _channel_sender: &mut ResponseChannelWrapper,
     ) -> bool {
         // println!("Into ExternalHttpCallNode");
         let mut goto_node_id = &self.next_node_id;
@@ -597,7 +620,7 @@ impl RuntimeNode for SendEmailNode {
         req: &Request,
         ctx: &mut Context,
         _response: &mut ResponseData,
-        _channel_sender: &mut ResponseSenderWrapper,
+        _channel_sender: &mut ResponseChannelWrapper,
     ) -> bool {
         // println!("Into SendEmailNode");
         if let Ok(Some(settings)) = get_settings(&req.robot_id) {
@@ -649,7 +672,7 @@ impl LlmChatNode {
         req: &Request,
         ctx: &mut Context,
         response: &mut ResponseData,
-        channel_sender: &mut ResponseSenderWrapper,
+        channel_sender: &mut ResponseChannelWrapper,
     ) -> bool {
         // log::info!("Into LlmChatNode");
         self.cur_run_times += 1;
@@ -700,18 +723,22 @@ impl LlmChatNode {
             let read_timeout = self.read_timeout;
             // let (s, r) = tokio::sync::mpsc::channel::<String>(1);
             if channel_sender.sender.is_none() {
-                let (s, r) = tokio::sync::mpsc::channel::<String>(2);
+                let (s, r) = tokio::sync::mpsc::channel::<StreamingResponseData>(2);
                 channel_sender.sender = Some(s);
                 channel_sender.receiver = Some(r);
             }
             let s = channel_sender.sender.clone().unwrap();
+            let sender_wrapper = SenderWrapper {
+                sender: s,
+                content_seq: ctx.add_answer_history(""),
+            };
             tokio::task::spawn(async move {
                 if let Err(e) = crate::ai::chat::chat(
                     &robot_id,
                     chat_history,
                     connect_timeout,
                     read_timeout,
-                    ResultSender::ChannelSender(&s),
+                    ResultSender::ChannelSender(sender_wrapper),
                 )
                 .await
                 {
@@ -815,7 +842,7 @@ impl RuntimeNode for LlmChatNode {
         req: &Request,
         ctx: &mut Context,
         response: &mut ResponseData,
-        channel_sender: &mut ResponseSenderWrapper,
+        channel_sender: &mut ResponseChannelWrapper,
     ) -> bool {
         // log::info!("Into LlmChatNode");
         let r = self.inner_exec(req, ctx, response, channel_sender);
@@ -1067,7 +1094,7 @@ impl RuntimeNode for KnowledgeBaseAnswerNode {
         req: &Request,
         ctx: &mut Context,
         response: &mut ResponseData,
-        _channel_sender: &mut ResponseSenderWrapper,
+        _channel_sender: &mut ResponseChannelWrapper,
     ) -> bool {
         // log::info!("Into LlmChaKnowledgeBaseAnswerNodetNode");
         for answer_source in &self.retrieve_answer_sources {
