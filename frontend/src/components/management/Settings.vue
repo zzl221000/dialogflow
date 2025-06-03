@@ -562,7 +562,13 @@ const sentenceEmbeddingProviders = [
         models: [
             { label: 'nomic-embed-text:v1.5', value: 'nomic-embed-text:v1.5' },
             { label: 'mxbai-embed-large:335m', value: 'mxbai-embed-large:335m' },
+            { label: 'bge-m3:567m', value: 'bge-m3:567m' },
+            { label: 'bge-large:335m', value: 'bge-large:335m' },
             { label: 'snowflake-arctic-embed:335m', value: 'snowflake-arctic-embed:335m' },
+            { label: 'snowflake-arctic-embed2:568m', value: 'snowflake-arctic-embed2:568m' },
+            { label: 'all-minilm:33m', value: 'all-minilm:33m' },
+            { label: 'paraphrase-multilingual:278m', value: 'paraphrase-multilingual:278m' },
+            { label: 'granite-embedding:278m', value: 'granite-embedding:278m' },
             { label: 'jina-embeddings-v2-base-en', value: 'jina/jina-embeddings-v2-base-en:latest' },
         ],
     },
