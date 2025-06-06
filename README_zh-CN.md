@@ -4,9 +4,9 @@
 
 # Dialog flow AI
 **只有一个执行文件** 的AI工具，不用安装任何依赖就可以**直接使用**, 它包含了意图识别，AI模型管理，可视化的流程编辑器，和应答逻辑.  
-<img src="https://img.shields.io/badge/Latest_version-v1.18.0-blue" /> <img src="https://img.shields.io/badge/MSRV-1.85.0-green" />
+<img src="https://img.shields.io/badge/Latest_version-v1.19.1-blue" /> <img src="https://img.shields.io/badge/MSRV-1.85.0-green" />
 
-![All in ONE](https://github.com/dialogflowai/dialogflow/blob/db304122162240e87de5c7d29d2ab06618334ca7/doc/assets/allinone.png)
+![All in ONE](./doc/assets/allinone.png)
 
 ![](./doc/assets/screenshots/flow-editor.png)
 
@@ -29,7 +29,7 @@
 * 🎨 The **front end** of this application is [here](https://github.com/dialogflowchatbot/dialogflow-frontend) -->
 
 # 查看详细介绍, 了解更多信息
-[https://dialogflowai.github.io/](https://dialogflowai.github.io/)
+[https://dialogflowai.github.io/#/?lang=zh](https://dialogflowai.github.io/#/?lang=zh)
 
 # 功能节点列表
 |节点|名称|
