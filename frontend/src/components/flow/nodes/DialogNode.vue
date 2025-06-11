@@ -396,7 +396,7 @@ export default defineComponent({
             }
         },
         async showVarsForm() {
-            let t = await httpReq('GET', 'variable', null, null, null);
+            let t = await httpReq('GET', 'variable', { robotId: this.robotId }, null, null);
             // console.log(t);
             if (t && t.status == 200 && t.data) {
                 this.vars = t.data;
