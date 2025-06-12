@@ -8,6 +8,7 @@ const { t, tm, rt } = useI18n();
 const route = useRoute();
 const router = useRouter();
 const robotId = route.params.robotId;
+const intentName = ref('')
 
 const intentData = reactive({
     keywords: [],
@@ -27,6 +28,7 @@ onMounted(async () => {
     let t = await httpReq('GET', 'intent/detail', formData, null, null);
     console.log(t.data);
     if (t.status == 200 && t.data) {
+        intentName.value = t.data.intent_name;
         intentData.keywords = t.data.keywords;
         intentData.regexes = t.data.regexes;
         intentData.phrases = t.data.phrases.map((cur, idx, arr) => cur.phrase);
@@ -252,7 +254,7 @@ const goBack = () => {
 <template>
     <el-page-header :title="t('lang.common.back')" @back="goBack">
         <template #content>
-            <span class="text-large font-600 mr-3">{{ $t('lang.intent.detail.edit') }}: {{ route.query.name }} </span>
+            <span class="text-large font-600 mr-3">{{ $t('lang.intent.detail.edit') }}: {{ intentName }} </span>
         </template>
     </el-page-header>
 

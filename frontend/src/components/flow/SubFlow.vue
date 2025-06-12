@@ -540,6 +540,8 @@ async function showSubFlow(idx) {
             switchSubFlow(idx);
             editedSubFlow = false;
         }).catch(() => {
+            switchSubFlow(idx);
+            editedSubFlow = false;
         })
     } else
         switchSubFlow(idx)
