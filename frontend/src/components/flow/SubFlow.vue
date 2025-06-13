@@ -329,14 +329,14 @@ register({
 
 const nodes = [
     { name: tm('lang.flow.nodes')[0], type: 'DialogNode', desc: tm('lang.flow.nodesDesc')[0], cnt: 1 },
-    { name: 'KnowledgeNode', type: 'KnowledgeBaseAnswerNode', desc: 'Knowledge base answer node', cnt: 1 },
-    { name: 'LlmChatNode', type: 'LlmChatNode', desc: 'Llm chat node', cnt: 1 },
+    { name: tm('lang.flow.nodes')[4], type: 'KnowledgeBaseAnswerNode', desc: 'Knowledge base answer node', cnt: 1 },
+    { name: tm('lang.flow.nodes')[5], type: 'LlmChatNode', desc: 'Llm chat node', cnt: 1 },
     { name: tm('lang.flow.nodes')[1], type: 'ConditionNode', desc: tm('lang.flow.nodesDesc')[1], cnt: 1 },
     { name: tm('lang.flow.nodes')[2], type: 'CollectNode', desc: tm('lang.flow.nodesDesc')[2], cnt: 1 },
-    { name: 'ExternalHttpNode', type: 'ExternalHttpNode', desc: 'Request and send data to external HTTP API with variables', cnt: 1 },
-    { name: 'SendEmailNode', type: 'SendEmailNode', desc: 'Sending an email an many recipients', cnt: 1 },
+    { name: tm('lang.flow.nodes')[6], type: 'ExternalHttpNode', desc: 'Request and send data to external HTTP API with variables', cnt: 1 },
+    { name: tm('lang.flow.nodes')[7], type: 'SendEmailNode', desc: 'Sending an email an many recipients', cnt: 1 },
     { name: tm('lang.flow.nodes')[3], type: 'GotoNode', desc: tm('lang.flow.nodesDesc')[3], cnt: 1 },
-    { name: 'EndNode', type: 'EndNode', desc: 'Ending node', cnt: 1 },
+    { name: tm('lang.flow.nodes')[8], type: 'EndNode', desc: 'Ending node', cnt: 1 },
 ]
 let selectedSubFlowIdx = -1;
 // let offsetLeft = 0;

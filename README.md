@@ -6,7 +6,7 @@
 
 ![All in ONE](./doc/assets/allinone.png)
 
-![Dialog flow editor](./doc/assets/screenshots/flow-editor.png)
+![Dialog flow editor](./doc/assets/screenshots/flow-editor-en.png)
 
 # ✨ Features
 * 🛒 **Light** Only ONE executable file, it can run smoothly on laptops without GPUs (data files will be created at runtime automatically).
