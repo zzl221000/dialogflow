@@ -28,7 +28,7 @@ export default {
             delConfirm: 'Are you sure you want to delete this dialog flow?',
         },
         flow: {
-            nodes: ['DialogNode', 'ConditionNode', 'CollectNode', 'GotoNode'],
+            nodes: ['DialogNode', 'ConditionNode', 'CollectNode', 'GotoNode', 'KnowledgeNode', 'LlmChatNode', 'ExternalHttpNode', 'SendEmailNode', 'EndNode'],
             nodesDesc: ['Returns the dialog text to the user', 'Setting up conditions to control where the dialog flow goes', 'Capture user input and save it to a variable', 'Jumping between dialog flows, or to an external link'],
             title: 'Compose dialog flow',
             steps: ['First step: publish flows', 'Second step: testing'],

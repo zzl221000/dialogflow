@@ -8,7 +8,7 @@
 
 ![All in ONE](./doc/assets/allinone.png)
 
-![](./doc/assets/screenshots/flow-editor.png)
+![](./doc/assets/screenshots/flow-editor-zh.png)
 
 # ✨ 关键特性
 * 🛒 **轻量级** 只有一个执行文件, 可以在没有GPU的笔记本上平滑的执行 (数据文件会在运行期动态的生成).
