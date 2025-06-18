@@ -125,12 +125,12 @@ jobs:
           #   bin: dialogflowai.exe
           #   name: dialogflowai-Windows-i686.zip
           #   skip_tests: true
-          # - os_name: Windows-x86_64
-          #   os: windows-2019
-          #   target: x86_64-pc-windows-msvc
-          #   bin: dialogflowai.exe
-          #   name: dialogflowai-Windows-x86_64.zip
-          #   skip_tests: true
+          - os_name: Windows-x86_64
+            os: windows-2019
+            target: x86_64-pc-windows-msvc
+            bin: dialogflowai.exe
+            name: dialogflowai-Windows-x86_64.zip
+            skip_tests: true
           - os_name: macOS-x86_64
             os: macOS-latest
             target: x86_64-apple-darwin
