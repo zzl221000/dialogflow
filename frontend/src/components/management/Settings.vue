@@ -416,7 +416,7 @@ const chatProviders = [
         id: 'OpenAI',
         name: 'OpenAI',
         apiUrl: 'https://api.openai.com/v1/chat/completions',
-        apiUrlDisabled: true,
+        apiUrlDisabled: false,
         showApiKeyInput: true,
         models: [
             { label: 'gpt-4o', value: 'gpt-4' },
@@ -449,7 +449,7 @@ const addAnotherChatOllamaModel = (m) => {
     chatModelOptions.unshift(obj);
     chatProviders[2].models.unshift(obj);
     chatModelSelector.value.blur();
-    settings.chatProvider.provider.id = 'Ollama';
+    // settings.chatProvider.provider.id = 'Ollama';
     settings.chatProvider.provider.model = obj.value;
     anotherChatOllamaModel.value = '';
 }
@@ -481,7 +481,7 @@ const textGenerationProviders = [
         id: 'OpenAI',
         name: 'OpenAI',
         apiUrl: 'https://api.openai.com/v1/chat/completions',
-        apiUrlDisabled: true,
+        apiUrlDisabled: false,
         showApiKeyInput: true,
         models: [
             { label: 'gpt-4', value: 'gpt-4' },
@@ -512,7 +512,7 @@ const addAnotherTextGenerationOllamaModel = (m) => {
     textGenerationModelOptions.unshift(obj);
     textGenerationProviders[2].models.unshift(obj);
     textGenerationModelSelector.value.blur();
-    settings.textGenerationProvider.provider.id = 'Ollama';
+    // settings.textGenerationProvider.provider.id = 'Ollama';
     settings.textGenerationProvider.provider.model = obj.value;
     anotherTextGenerationOllamaModel.value = '';
 }
@@ -546,7 +546,7 @@ const sentenceEmbeddingProviders = [
         id: 'OpenAI',
         name: 'OpenAI',
         apiUrl: 'https://api.openai.com/v1/embeddings',
-        apiUrlDisabled: true,
+        apiUrlDisabled: false,
         showApiKeyInput: true,
         models: [
             { label: 'text-embedding-3-large', value: 'text-embedding-3-large' },
@@ -592,7 +592,7 @@ const changeChatProvider = (n) => {
             settings.chatProvider.apiUrlDisabled = chatProviders[i].apiUrlDisabled;
             settings.chatProvider.showApiKeyInput = chatProviders[i].showApiKeyInput;
             choosedChatProvider.value = n;
-            if (n == 'Ollama') {
+            if (n == 'Ollama' || n == 'OpenAI') {
                 if (chatProviders[i].models.find(d => d.value == settings.chatProvider.provider.model) == null) {
                     addAnotherChatOllamaModel(settings.chatProvider.provider.model);
                 }
@@ -621,7 +621,7 @@ const changeTextGenerationProvider = (n) => {
             settings.textGenerationProvider.apiUrlDisabled = textGenerationProviders[i].apiUrlDisabled;
             settings.textGenerationProvider.showApiKeyInput = textGenerationProviders[i].showApiKeyInput;
             choosedTextGenerationProvider.value = n;
-            if (n == 'Ollama') {
+            if (n == 'Ollama'|| n == 'OpenAI') {
                 if (textGenerationProviders[i].models.find(d => d.value == settings.textGenerationProvider.provider.model) == null) {
                     addAnotherTextGenerationOllamaModel(settings.textGenerationProvider.provider.model);
                 }
@@ -650,7 +650,7 @@ const changeSentenceEmbeddingProvider = (n) => {
             settings.sentenceEmbeddingProvider.apiUrlDisabled = sentenceEmbeddingProviders[i].apiUrlDisabled;
             settings.sentenceEmbeddingProvider.showApiKeyInput = sentenceEmbeddingProviders[i].showApiKeyInput;
             choosedSentenceEmbeddingProvider.value = n;
-            if (n == 'Ollama') {
+            if (n == 'Ollama'|| n == 'OpenAI') {
                 if (sentenceEmbeddingProviders[i].models.find(d => d.value == settings.sentenceEmbeddingProvider.provider.model) == null) {
                     addAnotherSentenceEmbeddingOllamaModel(settings.sentenceEmbeddingProvider.provider.model);
                 }
@@ -670,7 +670,7 @@ const addAnotherSentenceEmbeddingOllamaModel = (m) => {
     sentenceEmbeddingModelOptions.unshift(obj);
     sentenceEmbeddingProviders[2].models.unshift(obj);
     sentenceEmbeddingModelSelector.value.blur();
-    settings.sentenceEmbeddingProvider.provider.id = 'Ollama';
+    // settings.sentenceEmbeddingProvider.provider.id = 'Ollama';
     settings.sentenceEmbeddingProvider.provider.model = obj.value;
     anotherSentenceEmbeddingOllamaModel.value = '';
 }
@@ -795,7 +795,7 @@ const usedBySentenceEmbeddingBig = [sentenceEmbeddingPic];
                         <el-option v-for="item in chatModelOptions" :id="item.value" :key="item.value"
                             :label="item.label" :value="item.value" />
                         <template #footer>
-                            <el-button :disabled="settings.chatProvider.provider.id != 'Ollama'"
+                            <el-button :disabled="settings.chatProvider.provider.id != 'Ollama' && settings.chatProvider.provider.id != 'OpenAI'"
                                 v-if="!isAddingAnotherChatOllamaModel" text bg
                                 @click="isAddingAnotherChatOllamaModel = true">
                                 Another ollama model
@@ -892,7 +892,7 @@ const usedBySentenceEmbeddingBig = [sentenceEmbeddingPic];
                         <el-option v-for="item in textGenerationModelOptions" :id="item.value" :key="item.value"
                             :label="item.label" :value="item.value" />
                         <template #footer>
-                            <el-button :disabled="settings.textGenerationProvider.provider.id != 'Ollama'"
+                            <el-button :disabled="settings.textGenerationProvider.provider.id != 'Ollama' && settings.textGenerationProvider.provider.id != 'OpenAI'"
                                 v-if="!isAddingAnotherTextGenerationOllamaModel" text bg
                                 @click="isAddingAnotherTextGenerationOllamaModel = true">
                                 Another ollama model
@@ -994,7 +994,7 @@ const usedBySentenceEmbeddingBig = [sentenceEmbeddingPic];
                         <el-option v-for="item in sentenceEmbeddingModelOptions" :id="item.value" :key="item.value"
                             :label="item.label" :value="item.value" />
                         <template #footer>
-                            <el-button :disabled="settings.sentenceEmbeddingProvider.provider.id != 'Ollama'"
+                            <el-button :disabled="settings.sentenceEmbeddingProvider.provider.id != 'Ollama' && settings.sentenceEmbeddingProvider.provider.id != 'OpenAI'"
                                 v-if="!isAddingAnotherSentenceEmbeddingOllamaModel" text bg
                                 @click="isAddingAnotherSentenceEmbeddingOllamaModel = true">
                                 Another ollama model
